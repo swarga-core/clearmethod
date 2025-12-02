@@ -1,0 +1,85 @@
+id: git-vcs
+name: "Git Version Control System"
+type: implementation
+version: "0.1.0"
+description: |
+  Git-based implementation of VCS concept for ClearMethod.
+  Provides automated git operations integrated with workflow stages.
+
+depends_on:
+  - core-concept # TASK, EVENT abstractions
+  - vcs-concept # VCS abstract concept
+  - file-task # For task access
+  - basic-events # For event handling
+
+provides:
+  concepts:
+    - GIT_VCS
+
+  methods:
+    - VCS.commit
+    - VCS.push
+    - VCS.create_branch
+    - VCS.switch_branch
+    - VCS.get_status
+    - VCS.get_diff
+    - VCS.create_pr
+    - VCS.get_log
+
+  handlers:
+    - on_stage_completed
+    - on_workflow_completed
+
+config_template:
+  git_vcs:
+    # Auto-commit settings
+    auto_commit:
+      enabled: false
+      stages:
+        - implementing
+        - completing
+      message_template: "feat({{task_id}}): {{stage}} completed"
+
+    # Auto-push settings
+    auto_push:
+      enabled: false
+      on_stages:
+        - completing
+      require_tests: true
+
+    # Branch strategy
+    branch_strategy:
+      enabled: false
+      pattern: "task/{{task_id}}"
+      create_on_start: false
+      base_branch: "main"
+
+    # PR creation
+    auto_pr:
+      enabled: false
+      on_workflow_complete: false
+      title_template: "{{task_title}}"
+      include_summary: true
+
+    # Commit message format
+    commit_format:
+      convention: "conventional" # conventional, simple, custom
+      validate: true
+      scopes_allowed: []
+
+    # Safety settings
+    protected_branches:
+      - main
+      - master
+      - production
+      - develop
+
+    force_push_allowed: false
+
+    # Integration
+    remote_provider: "github" # github, gitlab, bitbucket
+    remote_url: ""
+
+status: mvp
+author: "ClearMethod Team"
+license: "MIT"

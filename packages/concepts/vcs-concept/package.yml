@@ -1,0 +1,17 @@
+id: vcs-concept
+name: "Version Control System Concept"
+type: concept
+version: "1.0.0"
+
+description: |
+  Abstract Version Control System concept defining interface for git operations,
+  change tracking, and collaboration workflows.
+
+provides:
+  concepts:
+    - VCS (abstract)
+
+status: stable
+author: "ClearMethod Team"
+license: "MIT"
+

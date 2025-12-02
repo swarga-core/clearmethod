@@ -1,0 +1,42 @@
+method: get_diff
+description: "Get diff of changes"
+
+params:
+  - name: file
+    type: string
+    required: false
+  - name: staged
+    type: boolean
+    required: false
+    default: false
+
+returns:
+  type: string
+
+instructions:
+  group: "Build git diff command"
+  do:
+    - let: cmd = "git diff"
+    
+    - if: staged
+      then:
+        - let: cmd = cmd + " --staged"
+    
+    - if: file
+      then:
+        - let: cmd = cmd + " -- {file}"
+  
+  group: "Execute diff"
+  do:
+    - terminal: cmd
+      into: diff_output
+    
+    - if: diff_output.trim().length == 0
+      then:
+        - info: "No changes to show"
+      else:
+        - let: lines_count = diff_output.split("\n").length
+        - info: "Diff: {lines_count} lines"
+  
+  - return: diff_output
+

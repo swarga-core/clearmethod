@@ -1,0 +1,25 @@
+name: analyzing
+description: "Анализ кода для рефакторинга"
+
+instructions:
+  - EVENT.emit("task.stage_started", {task_id: task_id, stage: "analyzing"})
+  - TASK.set_property(task_id, "stage", "analyzing")
+  
+  - ask: "Which code needs refactoring? (files/modules)"
+    into: target_code
+  - ask: "What are the code smells/issues?"
+    into: code_issues
+  - ask: "Current test coverage?"
+    into: current_coverage
+  
+  - TASK.set_property(task_id, "target_code", target_code)
+  - TASK.set_property(task_id, "code_issues", code_issues)
+  - TASK.set_property(task_id, "current_coverage", current_coverage)
+  
+  - TASK.log(task_id, "Analysis complete: {target_code}")
+  - TASK.set_property(task_id, "analysis_complete", true)
+  - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "analyzing"})
+
+postconditions:
+  - TASK.get_property(task_id, "analysis_complete") == true
+

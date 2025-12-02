@@ -1,0 +1,101 @@
+# State: Analyzing
+# Анализ требований и контекста проекта
+
+state:
+  status: analyzing
+  title: "Analyzing"
+  description: "Глубокий анализ требований, изучение кодовой базы и контекста"
+
+# Предусловия
+preconditions:
+  - description: "Спецификация готова"
+    check: "TASK.get_property(task_id, 'specs_complete') == true"
+    error_message: "Cannot analyze without complete specs"
+
+# Выполнение
+execute:
+  # 1. Приветствие
+  - info: "Starting 'Analyzing' phase"
+  - info: "Goal: Understand requirements deeply and study relevant codebase"
+
+  # 2. Анализ требований
+  - "Read specs.md from task folder"
+  - group: "Analyze specifications"
+    do:
+      - "Identify key requirements"
+      - "List acceptance criteria"
+      - "Note constraints and limitations"
+      - "Identify external dependencies"
+
+  # 3. Изучение кодовой базы
+  - group: "Study relevant parts of codebase"
+    do:
+      - "Find related modules and components"
+      - "Understand current architecture and patterns"
+      - "Identify integration points"
+      - "Check for similar existing features"
+
+  # 4. Идентификация рисков и вопросов
+  - group: "Identify potential issues"
+    do:
+      - "Document technical risks"
+      - "List unclear requirements"
+      - "Note missing information"
+      - "Identify potential blockers"
+
+  # 5. Если есть вопросы - обсудить с пользователем
+  - if: questions_identified
+    then:
+      - "Present questions to user"
+      - "Gather clarifications"
+      - "Update specs.md if needed"
+
+  # 6. Создать analysis.md
+  - group: "Create comprehensive analysis document"
+    do:
+      - "Document requirements breakdown"
+      - "Write codebase overview (relevant parts only)"
+      - "List integration points"
+      - "Describe risks and mitigation strategies"
+      - "Add recommendations"
+      - "Write analysis.md to task folder"
+
+  # 7. Установить свойство
+  - TASK.set_property(task_id, "analysis_complete", true)
+
+  # 8. Логирование
+  - TASK.log(task_id, "Analysis completed")
+
+  # 9. Сообщить пользователю
+  - info: "Analysis complete. Key findings documented in analysis.md"
+  - info: "Next phase: 'Designing' - create detailed solution design"
+
+# Постусловия
+postconditions:
+  - description: "Файл analysis.md создан"
+    check: "file_exists(.cm/tasks/{task_id}/analysis.md)"
+    error_message: "analysis.md must be created"
+
+  - description: "Анализ не пустой"
+    check: "file_not_empty(.cm/tasks/{task_id}/analysis.md)"
+    error_message: "analysis.md cannot be empty"
+
+  - description: "Свойство analysis_complete установлено"
+    check: "TASK.get_property(task_id, 'analysis_complete') == true"
+
+# Возможные следующие состояния
+next_states:
+  - designing # Основной путь
+  - creating # Возврат если требования неясны
+
+# Примечания для агента
+agent_notes: |
+  В этом состоянии ты должен:
+
+  1. **Глубоко** понять что требуется
+  2. **Изучить** релевантные части кодовой базы
+  3. **Задать вопросы** если что-то неясно
+  4. **Документировать** свои находки
+
+  Качественный анализ = основа для хорошего дизайна.
+  Не спеши, используй codebase_search для изучения кода.

@@ -1,0 +1,58 @@
+handler: on_task_state_changed
+description: "Update board when task state changes"
+
+subscribes_to: task.state_changed
+
+filter:
+  config.packages.file_kanban.enabled: true
+  config.packages.file_kanban.auto_update: true
+
+priority: 30
+
+instructions:
+  group: "Extract event data"
+  do:
+    - let: task_id = event.payload.task_id
+    - let: from_state = event.payload.from_state
+    - let: to_state = event.payload.to_state
+    
+    - info: "Task {task_id} state changed: {from_state} → {to_state}"
+  
+  group: "Determine new column"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: columns = config.packages?.file_kanban?.columns || []
+    - let: new_column = null
+    
+    # Find column for new state
+    - for: col in columns
+      do:
+        - if: col.states.includes(to_state)
+          then:
+            - let: new_column = col.name
+            - break
+  
+  group: "Update kanban_column if needed"
+  do:
+    - if: new_column
+      then:
+        - TASK.get_property(task_id, "kanban_column")
+          into: current_column
+        
+        - if: current_column != new_column
+          then:
+            - TASK.set_property(task_id, "kanban_column", new_column)
+            - info: "Moved task {task_id} to column: {new_column}"
+  
+  group: "Update board"
+  do:
+    - KANBAN.update_board(false)
+
+notes: |
+  This handler automatically moves tasks between columns when their
+  workflow state changes. This keeps the kanban board synchronized
+  with the actual task progress.
+

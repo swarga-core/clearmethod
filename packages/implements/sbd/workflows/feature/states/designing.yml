@@ -1,0 +1,110 @@
+# State: Designing
+# Проектирование решения
+
+state:
+  status: designing
+  title: "Designing"
+  description: "Создание детального дизайна решения"
+
+# Предусловия
+preconditions:
+  - description: "Анализ завершен"
+    check: "TASK.get_property(task_id, 'analysis_complete') == true"
+    error_message: "Cannot design without completed analysis"
+
+# Выполнение
+execute:
+  # 1. Приветствие
+  - |
+    Inform user: "Starting 'Designing' phase.
+    Goal: Create detailed solution design."
+
+  # 2. Прочитать analysis.md
+  - "Read analysis.md from task folder"
+
+  # 3. Создать архитектурный дизайн
+  - group: "Design solution architecture"
+    do:
+      - "Define components and modules to create or modify"
+      - "Design data structures"
+      - "Define APIs and interfaces"
+      - "Identify integration points"
+      - "Plan file structure"
+
+  # 4. Технические решения
+  - group: "Define technical decisions"
+    do:
+      - "Choose technologies and libraries to use"
+      - "Select patterns and approaches"
+      - "Define error handling strategy"
+      - "Define testing strategy"
+
+  # 5. План реализации
+  - group: "Create implementation plan"
+    do:
+      - "Break down into implementation steps"
+      - "Define order of implementation"
+      - "Identify dependencies between steps"
+      - "Estimate complexity for each step"
+
+  # 6. Обсудить с пользователем
+  - "Present design to user"
+  - "Discuss and gather feedback"
+  - "Make adjustments if needed"
+
+  # 7. Получить approval
+  - "Ask user: 'Do you approve this design?'"
+  - if: user_approves
+    then:
+      - TASK.set_property(task_id, "design_approved", true)
+    else:
+      - "Make requested changes"
+      - "Return to step 6"
+
+  # 8. Создать design.md
+  - group: "Create comprehensive design document"
+    do:
+      - "Write architecture overview"
+      - "Document components breakdown"
+      - "List technical decisions and rationale"
+      - "Include detailed implementation plan"
+      - "Add diagrams or schemas if helpful"
+      - "Write design.md to task folder"
+
+  # 9. Логирование
+  - TASK.log(task_id, "Design completed and approved")
+
+  # 10. Сообщить пользователю
+  - |
+    Inform user: "Design approved and documented.
+    Next phase: 'Implementing' - bring the design to life!"
+
+# Постусловия
+postconditions:
+  - description: "Файл design.md создан"
+    check: "file_exists(.cm/tasks/{task_id}/design.md)"
+    error_message: "design.md must be created"
+
+  - description: "Дизайн не пустой"
+    check: "file_not_empty(.cm/tasks/{task_id}/design.md)"
+    error_message: "design.md cannot be empty"
+
+  - description: "Дизайн одобрен"
+    check: "TASK.get_property(task_id, 'design_approved') == true"
+    error_message: "Design must be approved before proceeding"
+
+# Возможные следующие состояния
+next_states:
+  - implementing # Основной путь
+  - analyzing # Возврат для уточнения
+
+# Примечания для агента
+agent_notes: |
+  Критически важный этап!
+
+  1. **Детальность**: Дизайн должен быть достаточно детальным, чтобы по нему реализовывать
+  2. **Clarity**: Пиши так, чтобы другой агент (или ты после сброса контекста) мог реализовать
+  3. **Approval**: Обязательно получи одобрение пользователя
+  4. **Flexibility**: Будь готов пересмотреть дизайн
+
+  Хороший дизайн = быстрая реализация.

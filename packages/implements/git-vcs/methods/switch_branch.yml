@@ -1,0 +1,51 @@
+method: switch_branch
+description: "Switch to a different branch"
+
+params:
+  - name: branch_name
+    type: string
+    required: true
+
+returns:
+  type: object
+
+instructions:
+  group: "Get current branch"
+  do:
+    - terminal: "git branch --show-current"
+      into: current
+    
+    - let: previous = current.trim()
+  
+  group: "Check for uncommitted changes"
+  do:
+    - terminal: "git status --porcelain"
+      into: status
+    
+    - if: status.trim().length > 0
+      then:
+        - warn: "You have uncommitted changes. They will be carried over to the new branch."
+  
+  group: "Verify target branch exists"
+  do:
+    - terminal: "git branch --list {branch_name}"
+      into: exists
+    
+    - if: exists.trim().length == 0
+      then:
+        - error: "Branch '{branch_name}' does not exist. Use VCS.create_branch() to create it."
+  
+  group: "Switch branch"
+  do:
+    - terminal: "git checkout {branch_name}"
+      into: checkout_output
+    
+    - info: "Switched from '{previous}' to '{branch_name}'"
+    
+    - let: result = {
+        previous_branch: previous,
+        current_branch: branch_name
+      }
+  
+  - return: result
+

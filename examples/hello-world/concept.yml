@@ -1,0 +1,49 @@
+concept: HELLO_TASK
+implements: TASK
+type: concrete
+description: "Упрощенная реализация концепта TASK. Хранит всю информацию о задаче в одном YAML файле вместо папки с множеством файлов."
+
+config:
+  tasks_root: ".cm/tasks"
+  task_file_extension: ".yml"
+
+storage_format: |
+  Каждая задача = один YAML файл: .cm/tasks/{task_id}.yml
+  
+  Структура файла:
+    id: TASK-123
+    title: "Task title"
+    workflow: "hello-world.simple"
+    status: "processing"
+    created_at: "2025-11-24T10:00:00Z"
+    created_by: "John"
+    last_updated_at: "2025-11-24T10:05:00Z"
+    last_updater: "John"
+    properties:
+      key: value
+    log:
+      - "[timestamp] entry"
+
+methods:
+  create: methods/create.yml
+  get_state: methods/get_state.yml
+  set_state: methods/set_state.yml
+  get_property: methods/get_property.yml
+  set_property: methods/set_property.yml
+  log: methods/log.yml
+  get_log: methods/get_log.yml
+
+notes: |
+  Отличия от FILE_TASK:
+  - Один файл вместо папки
+  - Нет отдельных specs.md, design.md и т.д.
+  - Лог хранится как массив внутри YAML
+  - Проще для понимания и тестирования
+  
+  Ограничения:
+  - Не подходит для больших задач с множеством артефактов
+  - Лог может разрастись в очень большой массив
+  - Нет возможности хранить бинарные артефакты
+  
+  Для реальной работы используйте FILE_TASK!
+

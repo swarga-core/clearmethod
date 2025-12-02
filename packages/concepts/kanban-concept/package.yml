@@ -1,0 +1,17 @@
+id: kanban-concept
+name: "Kanban Board Concept"
+type: concept
+version: "1.0.0"
+
+description: |
+  Abstract Kanban Board concept defining interface for task visualization
+  and workflow progress tracking through column-based organization.
+
+provides:
+  concepts:
+    - KANBAN (abstract)
+
+status: stable
+author: "ClearMethod Team"
+license: "MIT"
+

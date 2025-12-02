@@ -1,0 +1,104 @@
+method: run_linter
+description: "Run code linter and return results"
+
+params:
+  - name: files
+    type: array<string>
+    required: false
+  - name: fix
+    type: boolean
+    required: false
+    default: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Load linter configuration"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: linter_config = config.packages?.qa_gates?.linter
+    
+    - if: !linter_config
+      then:
+        - error: "Linter not configured in project.yml"
+    
+    - let: command = fix ? linter_config.fix_command : linter_config.command
+  
+  group: "Build linter command"
+  do:
+    - let: cmd = command
+    
+    - if: files && files.length > 0
+      then:
+        - let: files_str = files.join(" ")
+        - let: cmd = cmd + " " + files_str
+    
+    - info: "Running linter: {cmd}"
+  
+  group: "Execute linter"
+  do:
+    - terminal: cmd
+      into: linter_output
+      allow_failure: true
+    
+    # Parse linter output (format depends on linter)
+    # This is a simplified parser - real implementation needs tool-specific parsing
+    
+    - let: lines = linter_output.split("\n")
+    - let: errors = 0
+    - let: warnings = 0
+    - let: fixed = 0
+    - let: files_checked = 0
+    - let: issues = []
+    
+    # Simple parsing for common linter formats
+    - for: line in lines
+      do:
+        - if: line.includes("error")
+          then:
+            - let: errors = errors + 1
+        
+        - if: line.includes("warning")
+          then:
+            - let: warnings = warnings + 1
+        
+        - if: line.includes("fixed") || line.includes("Fixed")
+          then:
+            - let: fixed = fixed + 1
+    
+    - let: total_issues = errors + warnings
+  
+  group: "Build result"
+  do:
+    - let: result = {
+        total_issues: total_issues,
+        errors: errors,
+        warnings: warnings,
+        fixed: fixed,
+        files_checked: files ? files.length : 0,
+        issues: issues,
+        raw_output: linter_output
+      }
+    
+    - if: errors > 0
+      then:
+        - warn: "Linter found {errors} error(s) and {warnings} warning(s)"
+      else:
+        - info: "✅ Linter passed ({warnings} warning(s))"
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("quality.linter_completed", {
+        total_issues: total_issues,
+        errors: errors,
+        warnings: warnings,
+        files_checked: result.files_checked,
+        timestamp: now()
+      })
+  
+  - return: result
+

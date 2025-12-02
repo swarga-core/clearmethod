@@ -1,0 +1,22 @@
+method: get_board_state
+description: "Get current board state without regenerating"
+
+params: []
+
+returns:
+  type: object
+
+instructions:
+  - read: ".cm/kanban/board-state.yml"
+    format: yaml
+    into: board_state
+    allow_failure: true
+  
+  - if: !board_state
+    then:
+      # Generate if doesn't exist
+      - KANBAN.update_board(false)
+        into: board_state
+  
+  - return: board_state
+

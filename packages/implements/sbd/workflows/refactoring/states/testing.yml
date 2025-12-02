@@ -1,0 +1,32 @@
+name: testing
+description: "Тестирование после рефакторинга"
+
+instructions:
+  - EVENT.emit("task.stage_started", {task_id: task_id, stage: "testing"})
+  - TASK.set_property(task_id, "stage", "testing")
+  
+  - info: "CRITICAL: All tests must pass. No behavioral changes allowed."
+  
+  - ask: "All tests pass? (yes/no)"
+    into: all_tests_pass
+  - ask: "Any behavioral changes? (yes/no)"
+    into: has_changes
+  
+  - if: all_tests_pass != "yes"
+    then:
+      - TASK.log(task_id, "❌ Tests failing - returning to refactoring")
+      - error: "Tests failed. Return to refactoring to fix."
+  
+  - if: has_changes == "yes"
+    then:
+      - TASK.log(task_id, "⚠️ Behavioral changes detected!")
+      - error: "Refactoring should not change behavior. Fix and retry."
+  
+  - TASK.set_property(task_id, "testing_complete", true)
+  - TASK.log(task_id, "✅ All tests pass, no behavioral changes")
+  - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "testing"})
+  - EVENT.emit("quality.gate_passed", {task_id: task_id, gate: "refactoring_tests"})
+
+postconditions:
+  - TASK.get_property(task_id, "testing_complete") == true
+

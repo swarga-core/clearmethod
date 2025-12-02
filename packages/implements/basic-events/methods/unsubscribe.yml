@@ -1,0 +1,50 @@
+name: unsubscribe
+description: Remove an event subscription
+
+params:
+  - name: subscription_id
+    type: string
+    required: true
+
+instructions:
+  - group: "Validate subscription ID"
+    do:
+      - if: !subscription_id
+        then:
+          - error: "subscription_id is required"
+      
+      - info: "EVENT: Unsubscribing {subscription_id}"
+  
+  - group: "Remove subscription"
+    do:
+      - let: subscriptions_file = ".cm/events/subscriptions.yml"
+      
+      - read: subscriptions_file
+        into: subscriptions
+        default: []
+      
+      # Find and remove subscription
+      - let: found = false
+      - let: updated_subscriptions = []
+      
+      - for: sub in subscriptions
+        do:
+          - if: sub.id == subscription_id
+            then:
+              - let: found = true
+              - info: "EVENT: Removed subscription {subscription_id} ({sub.extension}.{sub.handler})"
+            else:
+              - let: updated_subscriptions = updated_subscriptions.append(sub)
+      
+      - if: !found
+        then:
+          - warn: "EVENT: Subscription {subscription_id} not found"
+          - return: false
+      
+      # Save updated subscriptions
+      - write: subscriptions_file
+        content: yaml(updated_subscriptions)
+      
+      - info: "EVENT: Subscription {subscription_id} unsubscribed"
+      - return: true
+

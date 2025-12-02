@@ -1,0 +1,57 @@
+method: check_coverage
+description: "Check if code coverage meets threshold"
+
+params:
+  - name: threshold
+    type: number
+    required: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Load configuration"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: default_threshold = config.packages?.qa_gates?.defaults?.min_coverage || 80
+    - let: target_threshold = threshold || default_threshold
+  
+  group: "Run tests with coverage"
+  do:
+    - QA_GATE.run_tests(null, true)
+      into: test_result
+    
+    - if: !test_result.coverage
+      then:
+        - error: "Coverage data not available. Ensure coverage tool is configured."
+    
+    - let: coverage_lines = test_result.coverage.lines
+  
+  group: "Check threshold"
+  do:
+    - let: passed = coverage_lines >= target_threshold
+    
+    - let: result = {
+        passed: passed,
+        coverage: coverage_lines,
+        threshold: target_threshold,
+        uncovered_files: []  # Would need coverage tool specific parsing
+      }
+    
+    - if: passed
+      then:
+        - info: "✅ Coverage check passed: {coverage_lines}% (threshold: {target_threshold}%)"
+      else:
+        - warn: "❌ Coverage check failed: {coverage_lines}% < {target_threshold}%"
+        
+        - EVENT.emit("quality.coverage_low", {
+            coverage: coverage_lines,
+            threshold: target_threshold,
+            timestamp: now()
+          })
+  
+  - return: result
+

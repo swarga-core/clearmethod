@@ -1,0 +1,78 @@
+name: completing
+description: "Финализация исправления бага"
+
+preconditions:
+  - TASK.get_property(task_id, "verification_complete") == true
+
+instructions:
+  - group: "Инициализация стадии"
+    do:
+      - EVENT.emit("task.stage_started", {task_id: task_id, stage: "completing"})
+      - TASK.set_property(task_id, "stage", "completing")
+      - TASK.log(task_id, "📋 Finalizing bug fix")
+  
+  - group: "Документирование исправления"
+    do:
+      - info: "Document the fix for future reference"
+      - let: fix_approach = TASK.get_property(task_id, "fix_approach")
+      - let: files_modified = TASK.get_property(task_id, "files_modified")
+      
+      - write: ".cm/tasks/{task_id}/fix-summary.md"
+        content: |
+          # Bug Fix Summary
+          
+          ## Problem
+          {TASK.get_property(task_id, "actual_behavior")}
+          
+          ## Root Cause
+          {fix_approach}
+          
+          ## Solution
+          Modified files: {files_modified}
+          
+          ## Testing
+          - Created test: {TASK.get_property(task_id, "test_file")}
+          - All tests pass
+          - Manually verified
+      
+      - TASK.log(task_id, "Fix summary documented")
+  
+  - group: "Проверка чистоты"
+    do:
+      - info: "Ensure codebase is clean"
+      - ask: "No debug code left? (yes/no)"
+        into: code_clean
+      - ask: "No commented out code? (yes/no)"
+        into: no_comments
+      
+      - if: code_clean != "yes" || no_comments != "yes"
+        then:
+          - warn: "Please clean up the code before completing"
+  
+  - group: "Коммит изменений (опционально)"
+    do:
+      - info: "Ready to commit changes"
+      - ask: "Commit message:"
+        into: commit_message
+      
+      - TASK.set_property(task_id, "commit_message", commit_message)
+      - TASK.log(task_id, "Suggested commit: {commit_message}")
+  
+  - group: "Завершение workflow"
+    do:
+      - TASK.set_property(task_id, "workflow_complete", true)
+      - TASK.set_property(task_id, "final_status", "success")
+      - TASK.set_state(task_id, "completed")
+      
+      - EVENT.emit("task.workflow_completed", {
+          task_id: task_id,
+          workflow: "sbd.bugfix",
+          result: "success"
+        })
+      
+      - TASK.log(task_id, "🎉 Bug fix completed successfully!")
+      - info: "✅ Workflow complete. Bug is fixed and verified!"
+
+postconditions:
+  - TASK.get_property(task_id, "workflow_complete") == true
+

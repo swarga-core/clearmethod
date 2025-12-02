@@ -1,0 +1,29 @@
+package: HELLO_WORLD
+id: hello-world
+name: "Hello World Test Package"
+version: "0.1.0"
+description: "Упрощенный тестовый пакет для проверки механик ClearMethod. Включает простую реализацию TASK и минимальный workflow."
+
+dependencies:
+  - core
+
+provides:
+  concepts:
+    - HELLO_TASK  # Упрощенная реализация TASK (один файл вместо папки)
+  
+  workflows:
+    - hello-world.simple  # Простой 3-этапный workflow для тестирования
+
+config:
+  tasks_root: ".cm/tasks"  # Корневая папка для задач
+  task_file_extension: ".yml"  # Расширение файлов задач
+
+purpose: |
+  Этот пакет создан для:
+  - Тестирования механик ClearMethod
+  - Демонстрации альтернативной реализации TASK
+  - Обучения пользователей
+  - Экспериментов с новыми фичами
+  
+  Не используйте этот пакет для реальной работы!
+  Для production используйте file-task + sbd.

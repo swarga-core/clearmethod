@@ -1,0 +1,84 @@
+# State: Completing
+# Завершение задачи
+
+state:
+  status: completing
+  title: "Completing"
+  description: "Финализация задачи и подведение итогов"
+
+# Предусловия
+preconditions:
+  - description: "Верификация пройдена"
+    check: "TASK.get_property(task_id, 'verification_passed') == true"
+    error_message: "Cannot complete without passing verification"
+
+# Выполнение
+execute:
+  # 1. Приветствие
+  - |
+    Inform user: "Starting 'Completing' phase.
+    Goal: Finalize task and wrap up."
+
+  # 2. Финальная проверка артефактов
+  - group: "Verify all artifacts are in place"
+    do:
+      - "Check specs.md exists"
+      - "Check analysis.md exists"
+      - "Check design.md exists"
+      - "Check implementation files exist"
+      - "Check test-results.md exists"
+
+  # 3. Создать summary.md
+  - group: "Create comprehensive summary document"
+    do:
+      - "Write task summary section (ID, title, completion date)"
+      - "Describe what was implemented"
+      - "Document key technical decisions"
+      - "List all modified and created files"
+      - "Reference all artifacts with descriptions"
+      - "Add next steps or future improvements if applicable"
+      - "Note known limitations if any"
+      - "Write summary.md to task folder"
+
+  # 4. Установить свойство task_complete
+  - TASK.set_property(task_id, "task_complete", true)
+
+  # 5. Финальное логирование
+  - TASK.log(task_id, "Task completed successfully")
+
+  # 6. Поздравить пользователя
+  - |
+    Congratulate user: "🎉 Task {task_id} completed successfully!
+
+    All artifacts are in task folder: .cm/tasks/{task_id}/
+
+    Summary available in summary.md
+
+    Great work! Ready for the next task?"
+
+# Постусловия
+postconditions:
+  - description: "Файл summary.md создан"
+    check: "file_exists(.cm/tasks/{task_id}/summary.md)"
+    error_message: "summary.md must be created"
+
+  - description: "Задача отмечена как завершенная"
+    check: "TASK.get_property(task_id, 'task_complete') == true"
+    error_message: "task_complete property must be set"
+
+# Возможные следующие состояния
+next_states: [] # Это конечное состояние
+
+# Примечания для агента
+agent_notes: |
+  Финальное состояние! Время праздновать!
+
+  1. **Проверь**: Все артефакты на месте
+  2. **Подведи итоги**: Создай качественный summary
+  3. **Поздравь**: Пользователь заслужил это!
+  4. **Гордись**: Вы вместе завершили полный цикл разработки
+
+  После completing:
+  - Нельзя вернуться назад (это конечное состояние)
+  - Задача считается завершенной
+  - Можно начинать новую задачу

@@ -1,0 +1,87 @@
+method: remove_column
+description: "Remove column from board configuration"
+
+params:
+  - name: column_name
+    type: string
+    required: true
+  - name: move_tasks_to
+    type: string
+    required: false
+
+returns:
+  type: boolean
+
+instructions:
+  group: "Load current config"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: kanban_config = config.packages?.file_kanban || {}
+    - let: columns = kanban_config.columns || []
+  
+  group: "Find column"
+  do:
+    - let: column_index = -1
+    - let: removed_column = null
+    
+    - for: col, index in columns
+      do:
+        - if: col.name == column_name
+          then:
+            - let: column_index = index
+            - let: removed_column = col
+            - break
+    
+    - if: column_index == -1
+      then:
+        - error: "Column '{column_name}' not found"
+  
+  group: "Move tasks if needed"
+  do:
+    - let: tasks_moved = 0
+    
+    - if: move_tasks_to
+      then:
+        # Get tasks in this column
+        - KANBAN.get_column_tasks(column_name)
+          into: tasks
+        
+        # Move each task
+        - for: task in tasks
+          do:
+            - KANBAN.move_task(task.id, move_tasks_to, false)
+            - let: tasks_moved = tasks_moved + 1
+        
+        - info: "Moved {tasks_moved} task(s) to '{move_tasks_to}'"
+  
+  group: "Remove column"
+  do:
+    - let: columns.splice(column_index, 1)
+    - let: kanban_config.columns = columns
+    - let: config.packages.file_kanban = kanban_config
+  
+  group: "Save configuration"
+  do:
+    - write: ".cm/project.yml"
+      format: yaml
+      contents: config
+    
+    - info: "Removed column '{column_name}'"
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("kanban.column_removed", {
+        column_name: column_name,
+        tasks_moved: tasks_moved,
+        timestamp: now()
+      })
+  
+  group: "Update board"
+  do:
+    - KANBAN.update_board(true)
+  
+  - return: true
+

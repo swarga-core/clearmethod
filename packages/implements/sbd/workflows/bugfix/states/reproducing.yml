@@ -1,0 +1,75 @@
+name: reproducing
+description: "Воспроизведение бага и создание failing теста"
+
+preconditions:
+  - TASK.get_property(task_id, "investigation_complete") == true
+
+instructions:
+  - group: "Инициализация стадии"
+    do:
+      - EVENT.emit("task.stage_started", {task_id: task_id, stage: "reproducing"})
+      - TASK.set_property(task_id, "stage", "reproducing")
+      - TASK.log(task_id, "🧪 Started reproduction and test creation")
+  
+  - group: "Воспроизведение бага"
+    do:
+      - info: "Follow reproduction steps to confirm the bug"
+      - let: steps = TASK.get_property(task_id, "reproduction_steps")
+      - info: "Steps: {steps}"
+      
+      - ask: "Can you reproduce the bug? (yes/no)"
+        into: reproduced
+      
+      - if: reproduced == "no"
+        then:
+          - warn: "Cannot reproduce. Need more information."
+          - TASK.set_property(task_id, "needs_more_info", true)
+          - return
+      
+      - TASK.set_property(task_id, "bug_reproduced", true)
+      - TASK.log(task_id, "Bug successfully reproduced")
+  
+  - group: "Создание failing теста"
+    do:
+      - info: "Create a test that demonstrates the bug"
+      - ask: "Test file path?"
+        into: test_file
+      - ask: "Test name?"
+        into: test_name
+      
+      - write: "{test_file}"
+        content: |
+          # Test for bug {task_id}
+          # This test currently FAILS - it will pass after fix
+          
+          test '{test_name}':
+            # Test code here
+            pass
+      
+      - TASK.set_property(task_id, "test_file", test_file)
+      - TASK.set_property(task_id, "test_created", true)
+      - TASK.log(task_id, "Created failing test: {test_file}")
+  
+  - group: "Подтверждение теста"
+    do:
+      - info: "Run the test to confirm it fails"
+      - ask: "Does the test fail as expected? (yes/no)"
+        into: test_fails
+      
+      - if: test_fails != "yes"
+        then:
+          - error: "Test should fail before fix. Please adjust the test."
+      
+      - TASK.set_property(task_id, "test_verified", true)
+      - TASK.log(task_id, "Test verified - fails as expected")
+  
+  - group: "Завершение стадии"
+    do:
+      - TASK.set_property(task_id, "reproduction_complete", true)
+      - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "reproducing"})
+      - info: "✅ Bug reproduced and test created. Ready to fix."
+
+postconditions:
+  - TASK.get_property(task_id, "bug_reproduced") == true
+  - TASK.get_property(task_id, "test_created") == true
+

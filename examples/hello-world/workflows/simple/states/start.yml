@@ -1,0 +1,65 @@
+# State: Start
+# Начальное состояние - приветствие и настройка
+
+state:
+  status: start
+  title: "Start"
+  description: "Начальное состояние для тестирования"
+
+preconditions:
+  - description: "Задача создана"
+    check: "exists(.cm/tasks/{task_id}.yml)"
+  
+  - description: "Workflow еще не начат"
+    check: "TASK.get_state(task_id) == null"
+
+execute:
+  # 1. Приветствие
+  - info: "👋 Hello World! Starting test workflow"
+  - info: "Task: {task_id}"
+  
+  # 2. Тест базовых переменных
+  - group: "Test variables"
+    do:
+      - let: test_value = "Hello ClearMethod"
+      - let: test_number = 42
+      - info: "Variable test_value = {test_value}"
+      - info: "Variable test_number = {test_number}"
+  
+  # 3. Установить свойства задачи
+  - group: "Set initial properties"
+    do:
+      - TASK.set_property(task_id, "test_mode", true)
+      - TASK.set_property(task_id, "stage", "start")
+      - TASK.set_property(task_id, "counter", 0)
+      - info: "Initial properties set"
+  
+  # 4. Логирование
+  - TASK.log(task_id, "Start state: initialization complete")
+  
+  # 5. Установить флаг готовности
+  - TASK.set_property(task_id, "start_complete", true)
+  
+  # 6. Сообщить пользователю
+  - info: "✅ Start state complete"
+  - info: "Next state: 'process' - test CML constructs"
+
+postconditions:
+  - description: "Свойство start_complete установлено"
+    check: "TASK.get_property(task_id, 'start_complete') == true"
+  
+  - description: "Свойство test_mode установлено"
+    check: "TASK.get_property(task_id, 'test_mode') == true"
+
+next_states:
+  - process
+
+agent_notes: |
+  Это первое состояние тестового workflow.
+  Здесь мы проверяем:
+  - Базовые инструкции (info, let)
+  - Семантическую группировку (group:)
+  - Вызовы методов TASK
+  - Установку свойств
+  - Логирование
+

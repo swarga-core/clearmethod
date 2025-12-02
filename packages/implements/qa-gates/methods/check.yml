@@ -1,0 +1,211 @@
+method: check
+description: "Execute quality checks for specified gate"
+
+params:
+  - name: gate_name
+    type: string
+    required: true
+  - name: task_id
+    type: string
+    required: true
+  - name: config
+    type: object
+    required: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Load configuration"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: project_config
+    
+    - let: gate_config = config || project_config.packages?.qa_gates?.gates?.[gate_name]
+    
+    - if: !gate_config
+      then:
+        - error: "No configuration found for gate '{gate_name}'"
+    
+    - if: !gate_config.enabled
+      then:
+        - info: "Gate '{gate_name}' is disabled, skipping"
+        - return: {
+            gate_name: gate_name,
+            passed: true,
+            checks: [],
+            summary: {total: 0, passed: 0, failed: 0, warnings: 0},
+            skipped: true
+          }
+  
+  group: "Initialize results"
+  do:
+    - let: checks_list = gate_config.checks || []
+    - let: results = []
+    - let: all_passed = true
+    - let: total_warnings = 0
+    
+    - info: "Running {checks_list.length} check(s) for gate '{gate_name}'"
+  
+  group: "Execute checks"
+  do:
+    - for: check_name in checks_list
+      do:
+        - info: "Running check: {check_name}"
+        
+        - if: check_name == "linter"
+          then:
+            - QA_GATE.run_linter(null, false)
+              into: linter_result
+            
+            - let: linter_passed = linter_result.errors == 0
+            - if: gate_config.linter?.fail_on_warning
+              then:
+                - let: linter_passed = linter_passed && linter_result.warnings == 0
+            
+            - let: results.push({
+                name: "linter",
+                type: "code_quality",
+                passed: linter_passed,
+                score: linter_result.total_issues,
+                threshold: 0,
+                message: "{linter_result.errors} error(s), {linter_result.warnings} warning(s)",
+                details: linter_result
+              })
+            
+            - if: !linter_passed
+              then:
+                - let: all_passed = false
+        
+        - if: check_name in ["basic_tests", "all_tests"]
+          then:
+            - let: coverage_required = gate_config.tests?.require_coverage || false
+            
+            - QA_GATE.run_tests(null, coverage_required)
+              into: test_result
+            
+            - let: tests_passed = test_result.failed == 0
+            
+            - let: results.push({
+                name: check_name,
+                type: "testing",
+                passed: tests_passed,
+                score: test_result.passed,
+                threshold: test_result.total,
+                message: "{test_result.passed}/{test_result.total} passed",
+                details: test_result
+              })
+            
+            - if: !tests_passed
+              then:
+                - let: all_passed = false
+        
+        - if: check_name == "coverage"
+          then:
+            - let: min_coverage = gate_config.tests?.min_coverage || 80
+            
+            - QA_GATE.check_coverage(min_coverage)
+              into: coverage_result
+            
+            - let: results.push({
+                name: "coverage",
+                type: "coverage",
+                passed: coverage_result.passed,
+                score: coverage_result.coverage,
+                threshold: coverage_result.threshold,
+                message: "{coverage_result.coverage}% (threshold: {min_coverage}%)",
+                details: coverage_result
+              })
+            
+            - if: !coverage_result.passed
+              then:
+                - let: all_passed = false
+        
+        - if: check_name == "design_document_exists"
+          then:
+            - TASK.get_property(task_id, "design_document")
+              into: design_doc
+            
+            - let: design_exists = !!design_doc
+            
+            - let: results.push({
+                name: "design_document_exists",
+                type: "documentation",
+                passed: design_exists,
+                score: design_exists ? 1 : 0,
+                threshold: 1,
+                message: design_exists ? "Design document found" : "Design document missing",
+                details: {design_document: design_doc}
+              })
+            
+            - if: !design_exists
+              then:
+                - let: all_passed = false
+  
+  group: "Build summary"
+  do:
+    - let: passed_count = results.filter(r => r.passed).length
+    - let: failed_count = results.filter(r => !r.passed).length
+    
+    - let: result = {
+        gate_name: gate_name,
+        passed: all_passed,
+        checks: results,
+        summary: {
+          total: results.length,
+          passed: passed_count,
+          failed: failed_count,
+          warnings: total_warnings
+        },
+        timestamp: now()
+      }
+    
+    - if: all_passed
+      then:
+        - info: "✅ Gate '{gate_name}' passed ({passed_count}/{results.length} checks)"
+      else:
+        - warn: "❌ Gate '{gate_name}' failed ({failed_count}/{results.length} checks failed)"
+  
+  group: "Log to task"
+  do:
+    - TASK.log(task_id, "QA Gate '{gate_name}': {all_passed ? 'PASSED' : 'FAILED'} ({passed_count}/{results.length})")
+    
+    - for: check in results
+      do:
+        - if: !check.passed
+          then:
+            - TASK.log(task_id, "  ❌ {check.name}: {check.message}")
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("quality.gate_checked", {
+        task_id: task_id,
+        gate_name: gate_name,
+        passed: all_passed,
+        checks_total: results.length,
+        checks_passed: passed_count,
+        timestamp: now()
+      })
+    
+    - if: all_passed
+      then:
+        - EVENT.emit("quality.gate_passed", {
+            task_id: task_id,
+            gate_name: gate_name,
+            checks_passed: passed_count,
+            timestamp: now()
+          })
+      else:
+        - let: errors = results.filter(r => !r.passed).map(r => r.message)
+        
+        - EVENT.emit("quality.gate_failed", {
+            task_id: task_id,
+            gate_name: gate_name,
+            errors: errors,
+            checks_failed: failed_count,
+            timestamp: now()
+          })
+  
+  - return: result
+

@@ -1,0 +1,82 @@
+method: push
+description: "Push commits to remote repository"
+
+params:
+  - name: branch
+    type: string
+    required: false
+  - name: force
+    type: boolean
+    required: false
+    default: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Get current branch"
+  do:
+    - terminal: "git branch --show-current"
+      into: current_branch
+    
+    - let: target_branch = branch || current_branch.trim()
+    
+    - info: "Pushing to branch: {target_branch}"
+  
+  group: "Check protected branches"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: protected = config.packages?.git_vcs?.protected_branches || ["main", "master", "production"]
+    
+    - if: force && protected.includes(target_branch)
+      then:
+        - error: "Force push to protected branch '{target_branch}' is not allowed"
+  
+  group: "Check for unpushed commits"
+  do:
+    - terminal: "git log origin/{target_branch}..HEAD --oneline 2>/dev/null || echo ''"
+      into: unpushed
+    
+    - if: unpushed.trim().length == 0
+      then:
+        - info: "No commits to push"
+        - return: {
+            success: true,
+            commits_pushed: 0
+          }
+    
+    - let: commits_count = unpushed.split("\n").filter(l => l.trim()).length
+  
+  group: "Push commits"
+  do:
+    - if: force
+      then:
+        - warn: "Force pushing {commits_count} commit(s) to {target_branch}"
+        - terminal: "git push --force origin {target_branch}"
+          into: push_output
+      else:
+        - terminal: "git push origin {target_branch}"
+          into: push_output
+    
+    - info: "Successfully pushed {commits_count} commit(s)"
+    
+    - let: result = {
+        success: true,
+        commits_pushed: commits_count,
+        branch: target_branch
+      }
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("vcs.push_completed", {
+        branch: target_branch,
+        commits_pushed: commits_count,
+        force: force,
+        timestamp: now()
+      })
+  
+  - return: result
+

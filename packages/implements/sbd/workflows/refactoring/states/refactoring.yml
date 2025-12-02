@@ -1,0 +1,23 @@
+name: refactoring
+description: "Выполнение рефакторинга"
+
+instructions:
+  - EVENT.emit("task.stage_started", {task_id: task_id, stage: "refactoring"})
+  - TASK.set_property(task_id, "stage", "refactoring")
+  
+  - info: "Perform refactoring in small, testable steps"
+  - ask: "Files modified?"
+    into: files_modified
+  - ask: "Refactoring techniques used?"
+    into: techniques
+  
+  - TASK.set_property(task_id, "files_modified", files_modified)
+  - TASK.set_property(task_id, "techniques_used", techniques)
+  - TASK.log(task_id, "Refactoring complete: {files_modified}")
+  
+  - TASK.set_property(task_id, "refactoring_complete", true)
+  - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "refactoring"})
+
+postconditions:
+  - TASK.get_property(task_id, "refactoring_complete") == true
+

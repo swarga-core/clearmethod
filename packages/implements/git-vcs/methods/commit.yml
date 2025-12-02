@@ -1,0 +1,108 @@
+method: commit
+description: "Stage and commit changes with a message"
+
+params:
+  - name: message
+    type: string
+    required: true
+  - name: files
+    type: array<string>
+    required: false
+  - name: push
+    type: boolean
+    required: false
+    default: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Validate parameters"
+  do:
+    - if: !message || message.length < 3
+      then:
+        - error: "Commit message too short (minimum 3 characters)"
+    
+    - if: message.length > 100
+      then:
+        - warn: "Commit message longer than 100 characters. Consider shortening."
+  
+  group: "Check repository status"
+  do:
+    - terminal: "git status --porcelain"
+      into: git_status
+    
+    - if: git_status.trim().length == 0
+      then:
+        - info: "No changes to commit"
+        - return: {
+            commit_hash: null,
+            files_changed: 0,
+            pushed: false
+          }
+  
+  group: "Stage files"
+  do:
+    - if: files && files.length > 0
+      then:
+        - for: file in files
+          do:
+            - terminal: "git add {file}"
+      else:
+        - terminal: "git add -A"
+    
+    - terminal: "git status --porcelain --cached"
+      into: staged_files
+    
+    - let: staged_count = staged_files.split("\n").filter(l => l.trim()).length
+    
+    - if: staged_count == 0
+      then:
+        - error: "No files staged for commit"
+  
+  group: "Create commit"
+  do:
+    - terminal: 'git commit -m "{message}"'
+      into: commit_output
+    
+    - terminal: "git rev-parse HEAD"
+      into: commit_hash
+    
+    - let: result = {
+        commit_hash: commit_hash.trim(),
+        files_changed: staged_count,
+        pushed: false,
+        message: message
+      }
+    
+    - info: "Committed {staged_count} file(s): {commit_hash.trim().substring(0, 8)}"
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("vcs.commit_created", {
+        commit_hash: result.commit_hash,
+        message: message,
+        files_changed: result.files_changed,
+        timestamp: now()
+      })
+  
+  group: "Push if requested"
+  do:
+    - if: push
+      then:
+        - terminal: "git push"
+          into: push_output
+        
+        - let: result.pushed = true
+        
+        - info: "Pushed to remote"
+        
+        - EVENT.emit("vcs.push_completed", {
+            commit_hash: result.commit_hash,
+            branch: current_branch,
+            commits_pushed: 1,
+            timestamp: now()
+          })
+  
+  - return: result
+

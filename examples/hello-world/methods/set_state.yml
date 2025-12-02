@@ -1,0 +1,46 @@
+method:
+  name: set_state
+  concept: HELLO_TASK
+  implements: TASK.set_state
+  version: "0.1.0"
+  description: "Устанавливает новое состояние задачи в YAML файле"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "Уникальный идентификатор задачи"
+  
+  - name: state
+    type: string
+    required: true
+    description: "Новое состояние задачи"
+
+preconditions:
+  - validate: exists(".cm/tasks/{task_id}.yml")
+    error: "Файл задачи {task_id}.yml не найден"
+
+execute:
+  - read: ".cm/tasks/{task_id}.yml"
+    as: yaml
+    into: task_data
+  
+  - let: task_data.status = state
+  - let: task_data.last_updated_at = current_datetime()
+  
+  - write: "{task_data}"
+    as: yaml
+    to: ".cm/tasks/{task_id}.yml"
+  
+  - info: "State of task {task_id} updated to '{state}'"
+
+postconditions:
+  - read: ".cm/tasks/{task_id}.yml"
+    as: yaml
+    into: updated_data
+  - validate: updated_data.status == state
+    error: "Состояние задачи {task_id} не было обновлено"
+
+on_error:
+  - error: "Не удалось установить состояние задачи {task_id} на '{state}'"
+

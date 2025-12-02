@@ -1,0 +1,215 @@
+# Feature Development Workflow
+# 7-состояний workflow для разработки фич
+
+workflow:
+  id: psd.feature
+  name: "Feature Development"
+  version: "0.2.0"
+  description: |
+    Поэтапный процесс разработки новых фич с ИИ-агентом.
+
+    Философия:
+    - Каждое состояние - самодостаточный этап
+    - Четкие входы/выходы (pre/postconditions)
+    - Изоляция состояний (координация через свойства задачи)
+    - Накопление артефактов в папке задачи
+
+    Последовательность:
+    Creating → Analyzing → Designing → Planning → Implementing → Verifying → Completing
+
+# Начальное и конечные состояния
+start_state: creating
+end_states:
+  - completing
+
+# Граф состояний
+states:
+  - status: creating
+    title: "Creating"
+    description: "Создание и спецификация задачи"
+    file: states/creating.yml
+    next_possible: [analyzing]
+
+  - status: analyzing
+    title: "Analyzing"
+    description: "Анализ требований и контекста"
+    file: states/analyzing.yml
+    next_possible: [designing, creating] # Может вернуться если требования неясны
+
+  - status: designing
+    title: "Designing"
+    description: "Проектирование решения"
+    file: states/designing.yml
+    next_possible: [planning, analyzing] # Может вернуться для уточнения
+
+  - status: planning
+    title: "Planning"
+    description: "Создание детального плана реализации"
+    file: states/planning.yml
+    next_possible: [implementing, designing] # Может вернуться для уточнения дизайна
+
+  - status: implementing
+    title: "Implementing"
+    description: "Реализация решения"
+    file: states/implementing.yml
+    next_possible: [verifying, planning] # Может вернуться для корректировки плана
+
+  - status: verifying
+    title: "Verifying"
+    description: "Проверка и тестирование"
+    file: states/verifying.yml
+    next_possible: [completing, implementing] # Может вернуться для исправлений
+
+  - status: completing
+    title: "Completing"
+    description: "Завершение и фиксация"
+    file: states/completing.yml
+    next_possible: [] # Конечное состояние
+
+# Transitions (правила переходов)
+transitions:
+  # creating → analyzing
+  - from: creating
+    to: analyzing
+    guard:
+      - condition: "FILE_TASK.get_property(task_id, 'specs_complete') == true"
+        error_message: "Specs must be complete before analyzing"
+
+  # analyzing → designing
+  - from: analyzing
+    to: designing
+    guard:
+      - condition: "FILE_TASK.get_property(task_id, 'analysis_complete') == true"
+        error_message: "Analysis must be complete"
+
+  # analyzing → creating (возврат)
+  - from: analyzing
+    to: creating
+    guard: [] # Возврат без ограничений
+    notes: "Возврат если требования неясны"
+
+  # designing → planning
+  - from: designing
+    to: planning
+    guard:
+      - condition: "FILE_TASK.get_property(task_id, 'design_approved') == true"
+        error_message: "Design must be approved"
+
+  # designing → analyzing (возврат)
+  - from: designing
+    to: analyzing
+    guard: []
+    notes: "Возврат для уточнения требований"
+
+  # planning → implementing
+  - from: planning
+    to: implementing
+    guard:
+      - condition: "FILE_TASK.get_property(task_id, 'plan_approved') == true"
+        error_message: "Plan must be approved"
+
+  # planning → designing (возврат)
+  - from: planning
+    to: designing
+    guard: []
+    notes: "Возврат если дизайн нужно пересмотреть"
+
+  # implementing → verifying
+  - from: implementing
+    to: verifying
+    guard:
+      - condition: "FILE_TASK.get_property(task_id, 'implementation_complete') == true"
+        error_message: "Implementation must be complete"
+
+  # implementing → planning (возврат)
+  - from: implementing
+    to: planning
+    guard: []
+    notes: "Возврат для корректировки плана"
+
+  # verifying → completing
+  - from: verifying
+    to: completing
+    guard:
+      - condition: "FILE_TASK.get_property(task_id, 'verification_passed') == true"
+        error_message: "Verification must pass"
+
+  # verifying → implementing (возврат)
+  - from: verifying
+    to: implementing
+    guard: []
+    notes: "Возврат для исправления багов"
+
+# Артефакты, создаваемые в процессе
+artifacts:
+  creating:
+    - specs.md # Уже создается при FILE_TASK.create()
+
+  analyzing:
+    - analysis.md # Результаты анализа
+
+  designing:
+    - design.md # Дизайн решения
+
+  planning:
+    - plan.md # Детальный план реализации
+    - checklist.md # Чеклист (опционально)
+
+  implementing:
+    - implementation.md # Заметки по реализации (опционально)
+
+  verifying:
+    - test-results.md # Результаты тестирования
+
+  completing:
+    - summary.md # Итоговая сводка
+
+# Примеры использования
+examples:
+  - description: "Запуск feature workflow"
+    code: |
+      # Пользователь: /cm-start psd.feature TASK-123
+      WORKFLOW.start("TASK-123")
+      # → Задача переходит в 'creating'
+
+  - description: "Переход к следующему состоянию"
+    code: |
+      # Пользователь: /cm-next
+      WORKFLOW.next("TASK-123")
+      # → Проверка postconditions текущего состояния
+      # → Проверка guard conditions перехода
+      # → Переход в следующее состояние
+
+  - description: "Возврат к предыдущему состоянию"
+    code: |
+      # Пользователь: /cm-goback
+      WORKFLOW.goback("TASK-123")
+
+# Примечания для агента
+agent_notes: |
+  Важные принципы исполнения:
+
+  1. **Изоляция состояний**:
+     - Состояние не знает о других состояниях
+     - Координация только через свойства задачи
+     - Каждое состояние - self-contained
+
+  2. **Переходы**:
+     - Всегда проверяй postconditions перед переходом
+     - Проверяй guard conditions целевого состояния
+     - Логируй все переходы
+
+  3. **Артефакты**:
+     - Создавай артефакты в папке задачи
+     - Не удаляй артефакты предыдущих состояний
+     - Накапливай, не перезаписывай (unless explicitly needed)
+
+  4. **Возвраты**:
+     - Возврат назад - нормально, это часть процесса
+     - При возврате предупреди пользователя о последствиях
+     - Не удаляй артефакты при возврате
+
+  5. **Завершение**:
+     - completing - единственное конечное состояние
+     - После completing задача считается завершенной
+     - Нельзя вернуться из completing

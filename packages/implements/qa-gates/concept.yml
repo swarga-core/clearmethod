@@ -1,0 +1,50 @@
+concept:
+  id: BASIC_QA_GATE
+  name: "Basic QA Gate"
+  type: concrete
+  implements: QA_GATE
+  version: "0.1.0"
+  description: |
+    Basic implementation of QA_GATE concept.
+    Provides quality checks via terminal commands (linters, tests, coverage tools).
+
+properties:
+  - name: project_path
+    type: string
+    description: "Path to project root"
+    required: true
+    default: "."
+  
+  - name: config
+    type: object
+    description: "QA gate configuration"
+    required: false
+  
+  - name: last_check_results
+    type: object
+    description: "Cache of last check results"
+    required: false
+
+methods:
+  # All methods implemented in methods/ folder
+  - check
+  - validate
+  - get_config
+  - get_results
+  - run_linter
+  - run_tests
+  - check_coverage
+
+event_handlers:
+  # Handlers in handlers/ folder
+  - on_stage_completed
+  - on_commit_created
+
+notes: |
+  BASIC_QA_GATE implementation:
+  - Uses terminal commands to run linters and tests
+  - Parses output to extract results
+  - Configurable thresholds per stage
+  - Blocks workflow progression on failures
+  - Integrates with VCS (check on commit)
+

@@ -1,0 +1,271 @@
+name: VCS
+description: |
+  Abstract Version Control System concept for managing code changes.
+  VCS provides interface for git operations, change tracking, and collaboration.
+  
+  Implementations must provide:
+  - Commit operations (staging, committing, pushing)
+  - Branch management (create, switch, merge)
+  - Status checks (diff, log, status)
+  - Pull request/merge request creation
+  - Integration with remote repositories
+
+type: abstract
+
+methods:
+  commit:
+    description: |
+      Stage and commit changes with a message.
+      Optionally push to remote.
+    params:
+      - name: message
+        type: string
+        required: true
+        description: Commit message
+      
+      - name: files
+        type: array<string>
+        required: false
+        description: Specific files to commit (empty = all changes)
+      
+      - name: push
+        type: boolean
+        required: false
+        default: false
+        description: Push to remote after committing
+    
+    returns:
+      type: object
+      description: |
+        {
+          commit_hash: string,
+          files_changed: number,
+          pushed: boolean
+        }
+  
+  push:
+    description: |
+      Push commits to remote repository.
+    params:
+      - name: branch
+        type: string
+        required: false
+        description: Branch to push (defaults to current)
+      
+      - name: force
+        type: boolean
+        required: false
+        default: false
+        description: Force push (USE WITH CAUTION)
+    
+    returns:
+      type: object
+      description: |
+        {
+          success: boolean,
+          commits_pushed: number
+        }
+  
+  create_branch:
+    description: |
+      Create a new branch from current or specified branch.
+    params:
+      - name: branch_name
+        type: string
+        required: true
+        description: Name for new branch
+      
+      - name: from_branch
+        type: string
+        required: false
+        description: Base branch (defaults to current)
+      
+      - name: checkout
+        type: boolean
+        required: false
+        default: true
+        description: Switch to new branch after creation
+    
+    returns:
+      type: object
+      description: |
+        {
+          branch: string,
+          checked_out: boolean
+        }
+  
+  switch_branch:
+    description: |
+      Switch to a different branch.
+    params:
+      - name: branch_name
+        type: string
+        required: true
+        description: Branch to switch to
+    
+    returns:
+      type: object
+      description: |
+        {
+          previous_branch: string,
+          current_branch: string
+        }
+  
+  get_status:
+    description: |
+      Get current repository status.
+    params: []
+    
+    returns:
+      type: object
+      description: |
+        {
+          branch: string,
+          modified: array<string>,
+          staged: array<string>,
+          untracked: array<string>,
+          ahead: number,
+          behind: number
+        }
+  
+  get_diff:
+    description: |
+      Get diff of changes.
+    params:
+      - name: file
+        type: string
+        required: false
+        description: Specific file (empty = all changes)
+      
+      - name: staged
+        type: boolean
+        required: false
+        default: false
+        description: Show staged changes only
+    
+    returns:
+      type: string
+      description: Diff output
+  
+  create_pr:
+    description: |
+      Create pull request (requires remote repository integration).
+    params:
+      - name: title
+        type: string
+        required: true
+        description: PR title
+      
+      - name: description
+        type: string
+        required: false
+        description: PR description
+      
+      - name: base_branch
+        type: string
+        required: false
+        default: "main"
+        description: Target branch for PR
+      
+      - name: source_branch
+        type: string
+        required: false
+        description: Source branch (defaults to current)
+    
+    returns:
+      type: object
+      description: |
+        {
+          pr_number: number,
+          pr_url: string
+        }
+  
+  get_log:
+    description: |
+      Get commit history.
+    params:
+      - name: limit
+        type: number
+        required: false
+        default: 10
+        description: Number of commits to show
+      
+      - name: branch
+        type: string
+        required: false
+        description: Branch to show log for (defaults to current)
+    
+    returns:
+      type: array
+      description: |
+        Array of commits:
+        [
+          {
+            hash: string,
+            author: string,
+            date: string,
+            message: string
+          }
+        ]
+
+# Standard events emitted by VCS implementations
+standard_events:
+  - event_type: vcs.commit_created
+    description: Emitted after successful commit
+    payload:
+      task_id: string
+      commit_hash: string
+      message: string
+      files_changed: number
+      timestamp: string
+  
+  - event_type: vcs.push_completed
+    description: Emitted after successful push
+    payload:
+      task_id: string
+      branch: string
+      commits_pushed: number
+      timestamp: string
+  
+  - event_type: vcs.branch_created
+    description: Emitted after new branch creation
+    payload:
+      task_id: string
+      branch_name: string
+      from_branch: string
+      timestamp: string
+  
+  - event_type: vcs.pr_created
+    description: Emitted after PR creation
+    payload:
+      task_id: string
+      pr_number: number
+      pr_url: string
+      title: string
+      timestamp: string
+  
+  - event_type: vcs.operation_failed
+    description: Emitted when VCS operation fails
+    payload:
+      task_id: string
+      operation: string
+      error: string
+      timestamp: string
+
+# Events that VCS typically subscribes to
+subscribes_to:
+  - task.stage_completed
+  - task.workflow_completed
+  - quality.gate_passed
+
+notes: |
+  VCS implementations should:
+  1. Never force push to protected branches (main, master, production)
+  2. Always check for uncommitted changes before branch operations
+  3. Provide clear error messages for git failures
+  4. Log all operations for audit trail
+  5. Respect .gitignore patterns
+  6. Handle merge conflicts gracefully
+  7. Validate commit messages (length, format)
+  8. Support conventional commits format (optional)
+

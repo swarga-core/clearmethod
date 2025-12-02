@@ -1,0 +1,112 @@
+handler: on_workflow_completed
+description: "Handle workflow completion - create PR if configured"
+
+subscribes_to: task.workflow_completed
+
+filter:
+  # Only react if auto_pr is enabled
+  config.packages.git_vcs.auto_pr.enabled: true
+  config.packages.git_vcs.auto_pr.on_workflow_complete: true
+
+priority: 40
+
+instructions:
+  group: "Extract event data"
+  do:
+    - let: task_id = event.payload.task_id
+    - let: workflow = event.payload.workflow
+    - let: result = event.payload.result || "success"
+    
+    - info: "Workflow '{workflow}' completed for task {task_id} with result: {result}"
+  
+  group: "Check result"
+  do:
+    - if: result != "success"
+      then:
+        - info: "Workflow did not complete successfully, skipping PR creation"
+        - return
+  
+  group: "Get task details"
+  do:
+    - TASK.get_property(task_id, "title")
+      into: task_title
+    
+    - TASK.get_property(task_id, "description")
+      into: task_description
+  
+  group: "Check if on feature branch"
+  do:
+    - let: status = VCS.get_status()
+    - let: current_branch = status.branch
+    
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: base_branch = config.packages?.git_vcs?.branch_strategy?.base_branch || "main"
+    
+    - if: current_branch == base_branch
+      then:
+        - info: "Already on base branch '{base_branch}', no PR needed"
+        - return
+  
+  group: "Check for unpushed commits"
+  do:
+    - if: status.ahead == 0
+      then:
+        - info: "No commits ahead of remote, nothing to create PR for"
+        - return
+    
+    - info: "{status.ahead} commit(s) ahead, creating PR"
+  
+  group: "Build PR title and description"
+  do:
+    - let: pr_title_template = config.packages?.git_vcs?.auto_pr?.title_template || "{{task_title}}"
+    - let: pr_title = pr_title_template.replace("{{task_title}}", task_title || task_id)
+    
+    - let: pr_description = ""
+    
+    - if: config.packages?.git_vcs?.auto_pr?.include_summary
+      then:
+        - TASK.get_log(task_id)
+          into: task_log
+        
+        # Build summary from task properties and log
+        - let: pr_description = "## Task: {task_id}\n\n"
+        - let: pr_description = pr_description + "{task_description || 'No description provided'}\n\n"
+        - let: pr_description = pr_description + "## Workflow\n\n"
+        - let: pr_description = pr_description + "Completed workflow: `{workflow}`\n\n"
+        - let: pr_description = pr_description + "## Changes\n\n"
+        
+        # Get commit log
+        - VCS.get_log(status.ahead, current_branch)
+          into: commits
+        
+        - for: commit in commits
+          do:
+            - let: pr_description = pr_description + "- {commit.message} ({commit.hash.substring(0, 7)})\n"
+  
+  group: "Create pull request"
+  do:
+    - VCS.create_pr(pr_title, pr_description, base_branch, current_branch)
+      into: pr_result
+    
+    - info: "Created PR #{pr_result.pr_number}: {pr_result.pr_url}"
+    
+    - TASK.log(task_id, "Pull request created: {pr_result.pr_url}")
+    - TASK.set_property(task_id, "pr_url", pr_result.pr_url)
+    - TASK.set_property(task_id, "pr_number", pr_result.pr_number)
+
+notes: |
+  This handler automatically creates a PR when workflow completes successfully.
+  
+  Example configuration:
+  
+  packages:
+    git_vcs:
+      auto_pr:
+        enabled: true
+        on_workflow_complete: true
+        title_template: "[{task_id}] {{task_title}}"
+        include_summary: true
+

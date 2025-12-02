@@ -1,0 +1,71 @@
+name: investigating
+description: "Исследование бага - понимание причины и масштаба проблемы"
+
+preconditions: []
+
+instructions:
+  - group: "Инициализация стадии"
+    do:
+      - EVENT.emit("task.stage_started", {task_id: task_id, stage: "investigating"})
+      - TASK.set_property(task_id, "stage", "investigating")
+      - TASK.log(task_id, "🔍 Started investigation of bug")
+  
+  - group: "Исследование бага"
+    do:
+      - info: "Analyze the bug report and gather information"
+      - ask: "What is the expected behavior?"
+        into: expected_behavior
+      - ask: "What is the actual behavior?"
+        into: actual_behavior
+      - ask: "Steps to reproduce?"
+        into: reproduction_steps
+      
+      - TASK.set_property(task_id, "expected_behavior", expected_behavior)
+      - TASK.set_property(task_id, "actual_behavior", actual_behavior)
+      - TASK.set_property(task_id, "reproduction_steps", reproduction_steps)
+      
+      - write: ".cm/tasks/{task_id}/bug-report.md"
+        content: |
+          # Bug Report
+          
+          ## Expected Behavior
+          {expected_behavior}
+          
+          ## Actual Behavior
+          {actual_behavior}
+          
+          ## Steps to Reproduce
+          {reproduction_steps}
+      
+      - TASK.log(task_id, "Bug report documented")
+  
+  - group: "Анализ кода"
+    do:
+      - info: "Analyze codebase to understand the bug"
+      - ask: "Which files/modules are likely affected?"
+        into: affected_files
+      
+      - TASK.set_property(task_id, "affected_files", affected_files)
+      - TASK.log(task_id, "Identified affected files: {affected_files}")
+  
+  - group: "Оценка сложности"
+    do:
+      - ask: "Bug severity? (critical/high/medium/low)"
+        into: severity
+      - ask: "Estimated fix time? (hours)"
+        into: estimated_hours
+      
+      - TASK.set_property(task_id, "severity", severity)
+      - TASK.set_property(task_id, "estimated_hours", estimated_hours)
+      - TASK.log(task_id, "Severity: {severity}, Estimated: {estimated_hours}h")
+  
+  - group: "Завершение стадии"
+    do:
+      - TASK.set_property(task_id, "investigation_complete", true)
+      - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "investigating"})
+      - info: "✅ Investigation complete. Ready to reproduce the bug."
+
+postconditions:
+  - TASK.get_property(task_id, "investigation_complete") == true
+  - TASK.get_property(task_id, "severity") != null
+

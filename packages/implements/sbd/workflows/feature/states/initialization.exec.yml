@@ -1,0 +1,12 @@
+parameters:
+  - name: task_id
+    description: ID of the task
+    type: string
+  - name: state_id
+    description: id of the workflow state
+    type: string
+  - name: specs
+    description: specs of the task
+    type: text
+execute:
+  - do: TASK.create(task_id, state_id, specs)

@@ -1,0 +1,57 @@
+concept:
+  id: GIT_VCS
+  name: "Git VCS"
+  type: concrete
+  implements: VCS
+  version: "0.1.0"
+  description: |
+    Git-based implementation of VCS concept.
+    Provides git operations with safety checks and workflow integration.
+
+properties:
+  - name: repository_path
+    type: string
+    description: "Path to git repository"
+    required: true
+    default: "."
+
+  - name: current_branch
+    type: string
+    description: "Current git branch"
+    required: false
+
+  - name: remote_name
+    type: string
+    description: "Remote repository name"
+    required: false
+    default: "origin"
+
+  - name: auto_mode
+    type: boolean
+    description: "Enable automatic git operations"
+    required: false
+    default: false
+
+methods:
+  # All methods implemented in methods/ folder
+  - commit
+  - push
+  - create_branch
+  - switch_branch
+  - get_status
+  - get_diff
+  - create_pr
+  - get_log
+
+event_handlers:
+  # Handlers in handlers/ folder
+  - on_stage_completed
+  - on_workflow_completed
+
+notes: |
+  GIT_VCS implementation:
+  - Uses terminal git commands via run_terminal_cmd
+  - Validates all operations before execution
+  - Respects protected branches
+  - Logs all operations to task log
+  - Emits events for integration

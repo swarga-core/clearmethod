@@ -1,0 +1,76 @@
+method: add_column
+description: "Add new column to board configuration"
+
+params:
+  - name: column_name
+    type: string
+    required: true
+  - name: states
+    type: array<string>
+    required: true
+  - name: position
+    type: number
+    required: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Load current config"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: kanban_config = config.packages?.file_kanban || {}
+    - let: columns = kanban_config.columns || []
+  
+  group: "Check if column exists"
+  do:
+    - for: col in columns
+      do:
+        - if: col.name == column_name
+          then:
+            - error: "Column '{column_name}' already exists"
+  
+  group: "Add column"
+  do:
+    - let: new_column = {
+        name: column_name,
+        states: states,
+        color: "grey"
+      }
+    
+    - if: position !== undefined && position >= 0
+      then:
+        - let: columns.splice(position, 0, new_column)
+      else:
+        - let: columns.push(new_column)
+        - let: position = columns.length - 1
+    
+    - let: kanban_config.columns = columns
+    - let: config.packages.file_kanban = kanban_config
+  
+  group: "Save configuration"
+  do:
+    - write: ".cm/project.yml"
+      format: yaml
+      contents: config
+    
+    - info: "Added column '{column_name}' at position {position}"
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("kanban.column_added", {
+        column_name: column_name,
+        states: states,
+        position: position,
+        timestamp: now()
+      })
+  
+  group: "Update board"
+  do:
+    - KANBAN.update_board(true)
+  
+  - return: new_column
+

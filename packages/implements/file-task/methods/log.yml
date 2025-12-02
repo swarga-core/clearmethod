@@ -1,0 +1,49 @@
+# TASK.log - Добавить запись в журнал задачи
+
+method:
+  name: log
+  concept: TASK
+  implements: TASK.log
+  version: "0.1.0"
+  description: "Добавляет запись в журнал действий задачи (log.md)"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "ID задачи"
+  
+  - name: entry
+    type: string
+    required: true
+    description: "Текст записи в журнал"
+
+preconditions:
+  - description: "Задача существует"
+    check: "exists(.cm/tasks/{task_id})"
+    error_message: "Task {task_id} not found"
+
+execute:
+  - let: log_file = ".cm/tasks/{task_id}/log.md"
+  - let: current_time = current_datetime()
+  
+  # Формат записи: [timestamp] entry
+  - let: log_entry = "[{current_time}] {entry}"
+  
+  # Добавляем в конец файла
+  - "Append line {log_entry} to {log_file}"
+
+postconditions:
+  - description: "Запись добавлена"
+    check: "file_contains({log_file}, {log_entry})"
+
+examples:
+  - code: |
+      TASK.log("TASK-123", "Started implementation")
+      TASK.log("TASK-123", "Created API endpoint /notifications")
+
+agent_notes: |
+  - Используй это ЧАСТО - логируй все важные действия
+  - Формат: [ISO8601 timestamp] message
+  - Append, не перезаписывай файл
+  - Одна запись = одна строка

@@ -1,0 +1,1418 @@
+# Партнерство с AI
+
+## Введение
+
+Когда речь заходит об использовании AI в разработке, существует несколько распространенных моделей взаимодействия. Одни воспринимают AI как волшебную палочку, способную создать приложение "из воздуха". Другие относятся к нему как к простому инструменту — своего рода умному автодополнению. Третьи вообще не используют, не доверяя технологии.
+
+Каждая из этих моделей имеет свои проблемы:
+
+**Волшебная палочка** приводит к разочарованию: "Сделай мне приложение" → галлюцинации, технический долг, непригодный код.
+
+**Простой инструмент** недоиспользует возможности: быстрые правки без понимания контекста, потеря связности, отсутствие процесса.
+
+**Недоверие** лишает преимуществ: AI может реально ускорить разработку, если правильно организовать взаимодействие.
+
+ClearMethod предлагает **иную парадигму**: партнерство через протокол. AI — не магия и не калькулятор. Это партнер в структурированном процессе, где роли четко определены, общение организовано, а результаты предсказуемы.
+
+---
+
+## Три модели взаимодействия: критический анализ
+
+### Модель 1: AI как Волшебная Палочка
+
+**Ожидание:**
+"Я скажу AI что мне нужно, и оно сделает. Магия!"
+
+**Типичный сценарий:**
+```
+→ "Создай мне e-commerce платформу с корзиной, оплатой и панелью администратора"
+→ AI генерирует 3000 строк кода
+→ Кажется, работает...
+→ Через неделю: баги, security дыры, невозможность поддерживать
+→ Результат: выброшено и переписано с нуля
+```
+
+**Почему не работает:**
+- AI не понимает бизнес-контекст
+- Нет проверки на реальность (hallucinations)
+- Отсутствие архитектуры
+- Невоспроизводимость процесса
+- Технический долг с первой минуты
+
+**Итог:** Разочарование, недоверие к AI, возврат к ручной разработке.
+
+---
+
+### Модель 2: AI как Простой Инструмент
+
+**Ожидание:**
+"AI поможет быстрее писать код, как улучшенный autocomplete."
+
+**Типичный сценарий:**
+```
+→ Пишешь функцию, AI предлагает автодополнение
+→ Принимаешь, не особо вдумываясь
+→ Код работает... пока контекст не меняется
+→ Через месяц: дублирование, несогласованность, паттерны размазаны
+→ Результат: быстрый старт, медленная поддержка
+```
+
+**Почему недостаточно:**
+- AI не видит полную картину проекта
+- Нет процесса, только точечные правки
+- Потеря контекста между сессиями
+- Отсутствие документирования решений
+- Недоиспользование возможностей AI
+
+**Итог:** Ускорение на 10-20%, но не революция в процессе.
+
+---
+
+### Модель 3: AI как Партнер через Протокол
+
+**Ожидание:**
+"AI и я следуем структурированному процессу. Я управляю, AI исполняет и предлагает."
+
+**Типичный сценарий:**
+```
+→ Создаешь задачу: /cm start feature "user authentication"
+→ Workflow ведет через этапы: analyzing → designing → planning → implementing
+→ AI загружает нужный контекст на каждом этапе
+→ Ты проверяешь и утверждаешь ключевые решения
+→ Quality gates проверяют результат
+→ Результат: качественная реализация, документированная история, воспроизводимость
+```
+
+**Почему это работает:**
+- Структурированный процесс
+- Правильный контекст в нужный момент
+- Человек контролирует критические решения
+- AI проверяет факты (reality checks)
+- Документированная история
+- Воспроизводимость
+
+**Итог:** Предсказуемые результаты, масштабируемость, реальное ускорение процесса.
+
+---
+
+## Новая парадигма: Structured Partnership
+
+### От хаоса к структуре
+
+ClearMethod меняет три фундаментальные вещи во взаимодействии с AI:
+
+#### 1. От Диалога к Протоколу
+
+**Было:**
+```
+You: "Добавь валидацию email в форму"
+AI: "Вот код..." [генерирует]
+You: "А как насчет проверки на уникальность?"
+AI: "Ах да, вот обновленный код..." [генерирует заново]
+You: "А где это сохранить?"
+AI: "Давайте добавим..." [генерирует в третий раз]
+```
+
+**Стало:**
+```
+You: /cm start bugfix "email validation missing"
+→ Workflow загружает контекст формы, существующей валидации, БД схемы
+→ AI анализирует проблему целиком
+→ Предлагает полное решение: валидация + уникальность + сохранение
+→ Ты утверждаешь design
+→ AI реализует весь план последовательно
+```
+
+**Результат:** Целостное решение вместо череды импровизаций.
+
+---
+
+#### 2. От Импровизации к Процессу
+
+**Было:**
+```
+Каждый раз заново: "Как мне это сделать?"
+Нет паттерна, нет повторяемости
+```
+
+**Стало:**
+```
+SBD Workflow:
+  Creating → Analyzing → Designing → Planning → Implementing → Verifying → Completing
+  
+Каждая задача проходит один путь
+Процесс можно улучшать и адаптировать
+```
+
+**Результат:** Воспроизводимость, обучение, масштабирование.
+
+---
+
+#### 3. От Истории Чата к Документированному Состоянию
+
+**Было:**
+```
+История чата = память
+Потерял чат = потерял контекст
+Новая сессия = начинаем с нуля
+```
+
+**Стало:**
+```
+.cm/tasks/TASK-001/
+  ├── task.yml        # Текущее состояние
+  ├── analysis.md     # Анализ проблемы
+  ├── design.md       # Архитектурное решение
+  ├── plan.md         # План реализации
+  └── log.md          # История решений
+
+Состояние в файлах, не в памяти чата
+Можно вернуться через месяц и продолжить
+Можно передать коллеге
+```
+
+**Результат:** Persistent state, аудит, коллаборация.
+
+---
+
+## Четыре столпа партнерства
+
+### 1. Ясность Ролей
+
+#### Роль AI:
+✓ **Исполняет** структурированные инструкции (CML)  
+✓ **Предлагает** варианты решений с обоснованием  
+✓ **Проверяет** соответствие реальности (reality checks)  
+✓ **Объясняет** свои решения и действия  
+✓ **Документирует** процесс и результаты  
+
+✗ **НЕ принимает** стратегических решений  
+✗ **НЕ выполняет** критические операции без подтверждения  
+✗ **НЕ импровизирует** вне workflow  
+
+#### Роль Человека:
+✓ **Определяет** цели и приоритеты  
+✓ **Принимает** архитектурные и бизнес-решения  
+✓ **Утверждает** критические изменения  
+✓ **Проверяет** качество результата  
+✓ **Несет ответственность** за финальный код  
+
+✗ **НЕ выполняет** рутинную работу вручную  
+✗ **НЕ дублирует** то, что AI может сделать  
+✗ **НЕ микроменеджит** каждый шаг AI  
+
+**Пример разделения:**
+```yaml
+# Feature: User Authentication
+
+Человек решает:
+  - Использовать JWT или sessions?
+  - Какие провайдеры OAuth подключать?
+  - Как хранить пароли (bcrypt rounds)?
+  - Где хранить токены (httpOnly cookies)?
+
+AI выполняет:
+  - Анализ существующей auth инфраструктуры
+  - Генерация кода согласно выбранной стратегии
+  - Написание тестов
+  - Проверка security best practices
+  - Документирование API
+```
+
+---
+
+### 2. Структурированное Общение
+
+#### Не "поболтать", а следовать workflow
+
+Каждое взаимодействие происходит **в контексте задачи** и **на определенном этапе**.
+
+**Пример: Feature Development**
+
+```
+Stage: Analyzing
+├─ Контекст: codebase structure, existing features, requirements
+├─ Цель: Понять проблему и scope
+└─ Результат: analysis.md
+
+  ↓
+
+Stage: Designing  
+├─ Контекст: analysis.md, architecture docs, design patterns
+├─ Цель: Спроектировать решение
+└─ Результат: design.md
+
+  ↓
+
+Stage: Planning
+├─ Контекст: design.md, project structure, dependencies
+├─ Цель: Создать пошаговый план
+└─ Результат: plan.md, checklist
+
+  ↓
+
+Stage: Implementing
+├─ Контекст: plan.md, codebase, tests
+├─ Цель: Реализовать по плану
+└─ Результат: code, tests, docs
+
+  ↓
+
+Stage: Verifying
+├─ Контекст: implemented code, requirements, quality standards
+├─ Цель: Проверить качество
+└─ Результат: test results, lint report, review
+
+  ↓
+
+Stage: Completing
+├─ Контекст: весь процесс
+├─ Цель: Финализировать и зафиксировать
+└─ Результат: commit, docs update, kanban update
+```
+
+**Ключевое:**
+- На каждом stage — **свой контекст** (не загружается все сразу)
+- На каждом stage — **своя задача** (не смешивается designing и implementing)
+- Переход между stages — **осознанный** (не хаотичный)
+
+---
+
+### 3. Взаимная Проверка
+
+Партнерство означает, что **обе стороны проверяют друг друга**.
+
+#### AI проверяет:
+
+**Reality Checks:**
+```yaml
+AI: "Ты просишь использовать функцию `getUserProfile()`,
+     но я проверил — она не существует в кодовой базе.
+     Возможно, ты имел в виду `fetchUserData()`?"
+```
+
+**Quality Checks:**
+```yaml
+AI: "Я реализовал feature, но:
+     - Покрытие тестами: 45% (требуется 80%)
+     - Линтер: 3 ошибки
+     - Type errors: 2
+     
+     Переходим к fixing или сначала обсудим подход?"
+```
+
+**Consistency Checks:**
+```yaml
+AI: "Ты просишь добавить REST endpoint,
+     но в проекте используется GraphQL.
+     Уверен, что нужен REST, или адаптируем под GraphQL?"
+```
+
+#### Человек проверяет:
+
+**Logic Review:**
+```yaml
+You: "AI предложил использовать polling каждые 5 секунд.
+      Это создаст ненужную нагрузку.
+      Используем WebSocket вместо этого."
+```
+
+**Architecture Review:**
+```yaml
+You: "AI реализовал все в одном файле на 500 строк.
+      Разобьем на модули: auth, validation, storage."
+```
+
+**Business Logic Review:**
+```yaml
+You: "AI добавил автоматическое удаление неактивных пользователей через 30 дней.
+      Но по GDPR нам нужно сохранять данные 2 года для compliance.
+      Меняем на 2 года + механизм anonymization."
+```
+
+**Результат:** Ошибки ловятся на ранних этапах, качество растет.
+
+---
+
+### 4. Доверие Через Прозрачность
+
+Доверие в партнерстве строится не на вере, а на **прозрачности и проверяемости**.
+
+#### AI объясняет "почему"
+
+```yaml
+# design.md
+
+## Архитектурное решение: JWT вместо Sessions
+
+### Обоснование:
+1. Stateless: не требует хранения на сервере
+2. Масштабируемость: работает в distributed setup
+3. Уже используется в проекте для API authentication
+4. Библиотека jsonwebtoken уже в dependencies
+
+### Альтернативы рассмотрены:
+- Sessions: требует Redis/DB, сложнее масштабировать
+- OAuth only: недостаточно для internal API
+
+### Риски:
+- Token size: JWT больше session ID
+- Revocation: сложнее отозвать токен до истечения
+- Mitigation: короткий lifetime (15 min) + refresh tokens
+
+### Решение:
+JWT для access (15 min) + refresh token (7 days) в httpOnly cookie
+```
+
+**Ты видишь:**
+- Что предлагается
+- Почему именно это
+- Какие альтернативы были
+- Какие риски и как их mitigation
+
+**Ты можешь:**
+- Согласиться
+- Оспорить с контраргументами
+- Предложить другой подход
+
+---
+
+#### Человек видит "что и как"
+
+```yaml
+# task.yml
+
+task_id: TASK-042
+title: "Add user authentication"
+state: implementing
+workflow: sbd.feature
+
+history:
+  - timestamp: 2024-01-15T10:00:00Z
+    state: creating
+    action: Task created
+    
+  - timestamp: 2024-01-15T10:15:00Z
+    state: analyzing
+    action: Analyzed existing auth infrastructure
+    artifacts: [analysis.md]
+    
+  - timestamp: 2024-01-15T11:00:00Z
+    state: designing
+    action: Designed JWT-based solution
+    artifacts: [design.md]
+    decision: "Approved by user"
+    
+  - timestamp: 2024-01-15T11:30:00Z
+    state: planning
+    action: Created implementation plan
+    artifacts: [plan.md, checklist.md]
+    
+  - timestamp: 2024-01-15T12:00:00Z
+    state: implementing
+    action: In progress (step 3/7)
+```
+
+**Ты видишь:**
+- Где мы сейчас
+- Как мы сюда пришли
+- Какие решения были приняты
+- Какие артефакты созданы
+
+**Ты можешь:**
+- Вернуться на любой этап
+- Проверить любое решение
+- Передать задачу коллеге
+- Воспроизвести процесс
+
+---
+
+#### Audit Trail сохраняет историю
+
+```yaml
+# log.md
+
+## 2024-01-15 10:00 - Task Created
+Created task for implementing user authentication.
+Workflow: sbd.feature
+
+## 2024-01-15 10:15 - Analysis Complete
+Analyzed existing codebase:
+- No authentication currently
+- Express.js backend
+- PostgreSQL database
+- Frontend: React with axios
+
+Decision: Implement from scratch, JWT-based.
+
+## 2024-01-15 11:00 - Design Approved
+Proposed architecture:
+- JWT access tokens (15 min)
+- Refresh tokens (7 days)
+- httpOnly cookies
+- bcrypt for passwords (12 rounds)
+
+User approved design.
+
+## 2024-01-15 11:30 - Planning Complete
+Created 7-step implementation plan:
+1. Database schema (users table)
+2. Password hashing utility
+3. JWT generation/verification
+4. Registration endpoint
+5. Login endpoint
+6. Refresh endpoint
+7. Protected route middleware
+
+## 2024-01-15 12:00 - Implementation Started
+Completed steps 1-3:
+- Created users table migration
+- Implemented hashPassword/verifyPassword
+- Added JWT utilities (sign/verify)
+
+Next: Registration endpoint
+```
+
+**Результат:**
+- Полная история проекта
+- Объяснение каждого решения
+- Возможность аудита
+- База знаний для команды
+
+---
+
+## Типы задач и уровень автономии
+
+Не все задачи требуют одинакового уровня участия человека. ClearMethod позволяет гибко настраивать **уровень автономии AI** в зависимости от типа задачи.
+
+### Уровень 1: Полностью автоматизируемые
+
+**Типичные задачи:**
+- Форматирование кода, линтинг
+- Генерация тестов по шаблону
+- Обновление документации
+- Генерация типов
+
+**Процесс:**
+- AI выполняет самостоятельно
+- Коммитит изменения
+- Уведомляет о результате
+
+**Человек:** Настраивает правила, получает уведомления, может откатить
+
+---
+
+### Уровень 2: Требуют подтверждения
+
+**Типичные задачи:**
+- Рефакторинг функций
+- Добавление зависимостей
+- Database migrations
+- API changes
+
+**Процесс:**
+- AI анализирует и предлагает решение
+- Показывает diff и риски
+- Ждет подтверждения
+- Человек проверяет и утверждает
+
+**Пример:**
+```
+[GATE: Requires approval]
+
+Рефакторинг: Extract UserService
+- Разделить auth.js (500 строк) на модули
+- 15 файлов обновить, 23 теста адаптировать
+- Risks: potential breaking changes
+
+→ Approve | Reject | Request alternatives
+```
+
+---
+
+### Уровень 3: Требуют совместной работы
+
+**Типичные задачи:**
+- Архитектурные решения
+- Performance optimization
+- Security-critical code
+- Сложные алгоритмы
+
+**Процесс:**
+- AI анализирует и предлагает варианты с trade-offs
+- Человек учитывает бизнес-контекст
+- Совместное обсуждение альтернатив
+- Человек принимает финальное решение
+- AI реализует
+
+**Пример диалога:**
+```
+AI: "Real-time уведомления. 3 варианта:
+     1. Polling (просто, но неэффективно)
+     2. SSE (средняя сложность, server→client)
+     3. WebSocket (сложно, но мощно)
+     Рекомендую WebSocket (chat уже на нем)."
+
+You: "WebSocket overkill. SSE достаточно."
+
+AI: "Понял. Учтем: SSE сейчас, migration path на WS в design.md."
+```
+
+---
+
+### Уровень 4: Только человек
+
+**Типичные задачи:**
+- Стратегические решения бизнеса
+- Production deployment
+- Удаление production данных
+- Billing logic
+- Compliance changes
+
+**Процесс:**
+- AI предоставляет информацию и анализ
+- AI готовит план и процедуры
+- Человек принимает решение
+- Человек выполняет критические действия
+- AI помогает мониторить
+
+**Что AI НЕ может:**
+- Deploy в production без approval
+- Удалить production данные
+- Изменить billing
+- Критические операции без явного разрешения
+
+---
+
+## Как строится доверие
+
+Доверие в партнерстве с AI не возникает мгновенно. Это процесс, который проходит несколько стадий.
+
+### Стадия 1: Начни с малого
+
+**Первые задачи:**
+```
+Week 1: Formatting, linting, simple refactoring
+Week 2: Bug fixes, test generation
+Week 3: Small features with clear requirements
+Week 4: More complex features
+```
+
+**Подход:**
+- Проверяй **каждый шаг** вначале
+- Изучай **как AI мыслит**
+- Найди **паттерны в его работе**
+- Отмечай **что получается хорошо, что нет**
+
+**Пример:**
+```
+Task 1: "Fix typo in README"
+→ Проверил: OK, simple change
+→ Доверие: +1
+
+Task 2: "Add input validation"  
+→ Проверил: Good, но пропустил edge case
+→ Фидбек: "Check empty string"
+→ AI исправил
+→ Доверие: +1, но нужна внимательность
+
+Task 3: "Refactor UserService"
+→ Проверил: Хорошая структура, но забыл обновить тесты
+→ Фидбек: "Update tests"
+→ AI обновил
+→ Доверие: +1, вижу паттерн (забывает тесты)
+
+Task 4: "Add new API endpoint"
+→ Проверил: Good, и тесты есть!
+→ AI учел предыдущий фидбек
+→ Доверие: +2
+```
+
+**Результат:** Через 10-15 задач ты понимаешь сильные/слабые стороны AI.
+
+---
+
+### Стадия 2: Установи границы
+
+**Safety Levels в конфигурации:**
+
+```yaml
+# .cm/project.yml
+
+safety:
+  levels:
+    auto:
+      # AI выполняет без подтверждения
+      allowed:
+        - format_code
+        - run_linter
+        - generate_types
+        - update_docs
+      restrictions:
+        - no_file_deletion
+        - no_dependency_changes
+        
+    review:
+      # AI предлагает, человек утверждает
+      allowed:
+        - refactoring
+        - add_dependencies
+        - api_changes
+        - schema_changes
+      restrictions:
+        - show_full_diff
+        - require_approval
+        
+    manual:
+      # Только человек выполняет
+      required_for:
+        - production_deploy
+        - delete_data
+        - billing_changes
+        - security_critical
+      ai_role: advisory_only
+
+  quality_gates:
+    - gate: lint
+      blocking: true
+      
+    - gate: tests
+      blocking: true
+      min_coverage: 80%
+      
+    - gate: security_scan
+      blocking: true
+      
+    - gate: human_review
+      blocking: true
+      required_for: [api_changes, schema_changes]
+
+  audit:
+    enabled: true
+    track:
+      - all_changes
+      - all_decisions
+      - approval_history
+    retention: 90_days
+```
+
+**Результат:**
+- AI знает границы
+- Критические действия защищены
+- Ты контролируешь процесс
+
+---
+
+### Стадия 3: Развивай процесс
+
+**От простых workflows к сложным:**
+
+```
+Month 1: Simple bugfix workflow
+  creating → analyzing → implementing → verifying → completing
+
+Month 2: Full feature workflow (SBD)
+  creating → analyzing → designing → planning → implementing → verifying → completing
+
+Month 3: Custom workflows
+  + code-review workflow
+  + performance-optimization workflow
+  + security-audit workflow
+
+Month 6: Enterprise workflows
+  + multi-team coordination
+  + compliance workflows
+  + advanced automation
+```
+
+**От частых проверок к доверию:**
+
+```
+Initially:
+  Проверяю каждый файл, каждое изменение
+
+After 2 weeks:
+  Проверяю только ключевые файлы, доверяю в рутине
+
+After 1 month:
+  Проверяю только design и критические части
+
+After 3 months:
+  Quality gates + выборочные проверки
+  AI стабильно выдает качество
+```
+
+**От ручного к автоматизированному:**
+
+```
+Week 1:
+  Ручной запуск тестов
+  Ручной review каждого изменения
+  Ручной commit
+
+Week 4:
+  Автоматический запуск тестов в workflow
+  Review только на design stage
+  AI коммитит routine changes
+
+Week 12:
+  Full automation для routine tasks
+  Human-in-loop только для critical decisions
+  Focus на архитектуру и бизнес-логику
+```
+
+**Результат:** Ты тратишь время на важное, AI берет рутину.
+
+---
+
+### Стадия 4: Сохраняй контроль
+
+**Даже при полном доверии:**
+
+✓ **Всегда понимай что происходит**
+```
+Читай design.md перед реализацией
+Проверяй ключевые изменения
+Понимай архитектурные решения
+```
+
+✓ **Не доверяй слепо**
+```
+AI может ошибаться
+Quality gates могут пропустить edge cases
+Твоя финальная ответственность
+```
+
+✓ **Проверяй результаты**
+```
+Запускай тесты сам периодически
+Делай code review critical parts
+Мониторь production
+```
+
+✓ **Используй audit trail**
+```
+Проверяй историю решений
+Ищи паттерны проблем
+Улучшай процесс на основе данных
+```
+
+**Пример проблемы:**
+```
+Заметил: AI стабильно пропускает edge case с null values
+
+Действие:
+1. Добавил в quality gate: "Check null handling"
+2. Обновил priming: "Always consider null/undefined"
+3. Добавил в workflow: explicit null check stage
+
+Результат: Проблема исчезла
+```
+
+**Правило:** Доверяй, но проверяй. Автоматизируй, но контролируй.
+
+---
+
+## Отличия от других подходов
+
+### ClearMethod vs Traditional AI Chat
+
+```
+┌─────────────────────────────────────┐
+│ Traditional Chat (ChatGPT/Claude)   │
+└─────────────────────────────────────┘
+
+You: "Add user authentication"
+AI:  [Generates code]
+You: "Add email validation"
+AI:  [Generates more code]
+You: "Where should I put this?"
+AI:  [Generates suggestions]
+...ad infinitum
+
+Проблемы:
+  ❌ Нет структуры
+  ❌ Нет контекста проекта
+  ❌ Нет воспроизводимости
+  ❌ История теряется
+  ❌ Каждая сессия с нуля
+
+---
+
+┌─────────────────────────────────────┐
+│ ClearMethod                         │
+└─────────────────────────────────────┘
+
+You: /cm start feature "user authentication"
+
+AI:  [Загружает контекст проекта]
+     Stage: Analyzing
+     → Проанализировал существующую инфраструктуру
+     → Выявил зависимости
+     → Создал analysis.md
+     
+     Переходим к проектированию?
+
+You: Да
+
+AI:  Stage: Designing
+     → Предложил архитектуру (JWT-based)
+     → Обосновал выбор
+     → Рассмотрел альтернативы
+     → Создал design.md
+     
+     [GATE: Requires approval]
+
+You: Утверждаю
+
+AI:  Stage: Planning
+     → Создал пошаговый план
+     → plan.md, checklist.md готовы
+     
+     Начинаем реализацию?
+
+[...процесс продолжается структурированно]
+
+Преимущества:
+  ✓ Структурированный процесс
+  ✓ Полный контекст на каждом этапе
+  ✓ Воспроизводимость
+  ✓ История в файлах
+  ✓ Можно продолжить в любой момент
+```
+
+---
+
+### ClearMethod vs Copilot-style Tools
+
+```
+┌─────────────────────────────────────┐
+│ GitHub Copilot / Tab Nine           │
+└─────────────────────────────────────┘
+
+function validateEmail(email) {
+  // [AI suggests autocomplete]
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+Use case:
+  - Быстрые правки
+  - Autocomplete
+  - Код на основе комментария
+
+Ограничения:
+  ❌ Нет видения полного процесса
+  ❌ Нет управления задачами
+  ❌ Нет workflow
+  ❌ Нет документирования решений
+  ❌ Нет quality gates
+
+---
+
+┌─────────────────────────────────────┐
+│ ClearMethod                         │
+└─────────────────────────────────────┘
+
+/cm start feature "email validation"
+
+AI ведет через полный процесс:
+  - Анализ: где нужна валидация?
+  - Дизайн: клиент, сервер или оба?
+  - Планирование: какие файлы затронуть?
+  - Реализация: код + тесты + docs
+  - Верификация: quality gates
+  - Завершение: commit + kanban update
+
+Результат:
+  ✓ Не просто функция, а полное решение
+  ✓ С тестами
+  ✓ С документацией
+  ✓ С обоснованием
+  ✓ С audit trail
+
+Вывод: Copilot для строк кода, ClearMethod для задач
+```
+
+---
+
+### ClearMethod vs Agent Frameworks
+
+```
+┌─────────────────────────────────────┐
+│ LangGraph / Autogen / CrewAI        │
+└─────────────────────────────────────┘
+
+Концепция: Autonomous Agents
+  → Agents общаются между собой
+  → Решают задачи автономно
+  → Человек запускает и ждет результата
+
+Пример (Autogen):
+  User → Manager Agent → Coder Agent → Tester Agent → Result
+
+Проблемы:
+  ❌ Сложность оркестрации
+  ❌ Непредсказуемость (agents могут "уйти в сторону")
+  ❌ Дорого (много LLM calls)
+  ❌ Сложно отлаживать
+  ❌ Black box (непонятно что происходит внутри)
+
+Use case: Research, эксперименты, automation задач
+
+---
+
+┌─────────────────────────────────────┐
+│ ClearMethod                         │
+└─────────────────────────────────────┘
+
+Концепция: Human-in-Control Partnership
+  → Один AI, но структурированный процесс
+  → Человек управляет, AI исполняет
+  → Workflow гарантирует предсказуемость
+
+Пример (ClearMethod):
+  User → Workflow → AI (с контекстом) → Result
+       ↓
+  [Human approval на критических этапах]
+
+Преимущества:
+  ✓ Простота (один AI, понятный workflow)
+  ✓ Предсказуемость (четкие этапы)
+  ✓ Эффективность (меньше LLM calls)
+  ✓ Прозрачность (видно каждый шаг)
+  ✓ Контроль (человек в цикле)
+
+Use case: Production-grade development
+
+Вывод:
+  Agent frameworks: для автономности и экспериментов
+  ClearMethod: для контролируемой production разработки
+```
+
+---
+
+## Практические примеры партнерства
+
+### Пример 1: Feature Development
+
+**Задача:** Добавить двухфакторную аутентификацию (2FA)
+
+**Традиционный подход:**
+```
+You: "Add 2FA"
+AI: [Generates code for TOTP]
+You: "How to integrate with existing auth?"
+AI: [Generates integration code]
+You: "What about backup codes?"
+AI: [Generates backup code logic]
+You: "How to test?"
+AI: [Suggests testing approach]
+...
+```
+
+**ClearMethod подход:**
+
+```yaml
+$ cm start feature "2FA authentication"
+
+═══════════════════════════════════════════════════
+ STAGE: Creating
+═══════════════════════════════════════════════════
+Task created: TASK-042
+Workflow: sbd.feature
+Next stage: analyzing
+
+═══════════════════════════════════════════════════
+ STAGE: Analyzing  
+═══════════════════════════════════════════════════
+[AI loads context: auth code, user model, security docs]
+
+Analysis complete → analysis.md
+
+Key findings:
+- JWT-based auth exists
+- User model в PostgreSQL
+- No 2FA infrastructure yet
+- Need: TOTP generation, QR codes, backup codes
+
+Recommendations:
+- Library: speakeasy (TOTP)
+- Storage: new columns in users table
+- UI: QR code with qrcode library
+
+═══════════════════════════════════════════════════
+ STAGE: Designing
+═══════════════════════════════════════════════════
+[AI loads context: analysis.md, architecture docs, security best practices]
+
+Design complete → design.md
+
+## Architecture:
+
+### Database:
+users table:
+  + two_factor_secret (encrypted)
+  + two_factor_enabled (boolean)
+  + backup_codes (encrypted array)
+
+### API Endpoints:
+POST /auth/2fa/enable  → Generate secret, return QR
+POST /auth/2fa/verify  → Verify TOTP code, enable 2FA
+POST /auth/2fa/disable → Disable 2FA (requires password)
+POST /auth/login       → Modified: check 2FA if enabled
+
+### Security:
+- Secrets encrypted at rest (AES-256)
+- Backup codes: 10 codes, one-time use, bcrypt hashed
+- Rate limiting: 5 attempts per minute
+- Audit log: all 2FA events
+
+[GATE: Requires approval]
+```
+
+**Ты проверяешь design.md:**
+```
+You: "Design looks good. Одно изменение: 
+      backup codes должны быть 12, а не 10.
+      И добавь возможность regenerate backup codes."
+
+AI:  "Принято. Обновляю design.md:
+      - Backup codes: 12 шт
+      - New endpoint: POST /auth/2fa/backup-codes/regenerate
+      
+      Design updated. Утверждаете?"
+
+You: "Да, утверждаю"
+```
+
+**Процесс продолжается:**
+```yaml
+═══════════════════════════════════════════════════
+ STAGE: Planning
+═══════════════════════════════════════════════════
+Plan complete → plan.md
+
+Implementation steps:
+1. Database migration (add columns)
+2. Encryption utilities
+3. TOTP generation/verification
+4. Backup codes generation/verification
+5. API endpoints
+6. Integration with existing /auth/login
+7. Tests (unit + integration)
+8. API documentation
+
+═══════════════════════════════════════════════════
+ STAGE: Implementing
+═══════════════════════════════════════════════════
+[Step 1/8] Database migration... ✓
+[Step 2/8] Encryption utilities... ✓
+[Step 3/8] TOTP logic... ✓
+[Step 4/8] Backup codes... ✓
+[Step 5/8] API endpoints... ✓
+[Step 6/8] Login integration... ✓
+[Step 7/8] Tests... ✓ (coverage: 94%)
+[Step 8/8] Documentation... ✓
+
+Implementation complete.
+
+═══════════════════════════════════════════════════
+ STAGE: Verifying
+═══════════════════════════════════════════════════
+Running quality gates...
+
+✓ Linter: passed
+✓ Type check: passed
+✓ Tests: 47/47 passed
+✓ Coverage: 94% (target: 80%)
+✓ Security scan: no issues
+
+[GATE: Manual review required]
+```
+
+**Ты делаешь review:**
+```
+You: "Проверил код. Все отлично.
+      Запустил локально — работает как ожидалось.
+      Approve."
+
+═══════════════════════════════════════════════════
+ STAGE: Completing
+═══════════════════════════════════════════════════
+Finalizing...
+
+✓ Committed: "feat: add 2FA authentication"
+✓ Updated documentation
+✓ Kanban: moved to Done
+✓ Created PR: #247
+
+Task TASK-042 completed successfully.
+```
+
+**Результат:**
+- Полная реализация с первой попытки
+- Документирован весь процесс
+- Все проверки пройдены
+- История решений сохранена
+- Можно воспроизвести подход для других features
+
+---
+
+### Пример 2: Bug Investigation
+
+**Проблема:** Users complain that "logout" не работает — они остаются залогинены после logout.
+
+**Традиционный подход:**
+```
+You: "Logout button doesn't work"
+AI: "Check if logout API is called"
+You: "It is called"
+AI: "Check if token is cleared"
+You: "Seems like it... let me check..."
+[10 минут debugging]
+You: "Token cleared in localStorage, but still logged in"
+AI: "Maybe cookie not cleared?"
+[Another round...]
+```
+
+**ClearMethod подход:**
+
+```yaml
+$ cm start bugfix "Logout doesn't work"
+
+═══════════════════════════════════════════════════
+ STAGE: Creating
+═══════════════════════════════════════════════════
+Task: TASK-056
+Workflow: sbd.bugfix
+
+═══════════════════════════════════════════════════
+ STAGE: Analyzing
+═══════════════════════════════════════════════════
+[AI loads context: auth code, logout implementation, related issues]
+
+AI: "Analyzing authentication flow...
+
+Current logout implementation:
+  Frontend:
+    - Calls POST /auth/logout
+    - Clears localStorage.token
+    - Redirects to /login
+    
+  Backend:
+    - Endpoint exists but empty (just returns 200)
+    - Does nothing with tokens
+    
+Issue identified:
+  JWT tokens are stateless — backend doesn't track them.
+  Just removing from localStorage not enough if:
+    - Token still in memory (React state)
+    - Token in cookie (httpOnly)
+    - Token cached by axios interceptor
+
+Reality check performed:
+  ✓ Checked actual code (not docs)
+  ✓ Found: JWT also stored in httpOnly cookie
+  ✓ Found: axios interceptor caches token
+  ✓ Cookie not cleared on logout
+
+ROOT CAUSE:
+  httpOnly cookie remains after logout → user still authenticated
+
+Analysis saved to analysis.md"
+
+═══════════════════════════════════════════════════
+ STAGE: Designing
+═══════════════════════════════════════════════════
+AI: "Proposed solution:
+
+## Fix:
+
+### Backend (POST /auth/logout):
+- Clear httpOnly cookie: res.clearCookie('refreshToken')
+- Optional: blacklist JWT (requires Redis/DB)
+
+### Frontend:
+- Keep: clear localStorage
+- Add: clear axios default headers
+- Add: reset React auth state
+
+### Testing:
+- E2E test: login → logout → verify no auth
+
+## Alternative considered:
+JWT blacklist via Redis
+  Pros: More secure (revokes token server-side)
+  Cons: Adds complexity, requires Redis
+  
+Recommendation: Start with cookie clearing (simple).
+Add blacklist later if needed.
+
+Design saved to design.md
+
+[GATE: Requires approval]"
+```
+
+**Ты проверяешь:**
+```
+You: "Да, это баг. Cookie должен был очищаться.
+      Согласен с простым решением — просто clearCookie.
+      Blacklist пока не нужен. Approve."
+
+═══════════════════════════════════════════════════
+ STAGE: Implementing
+═══════════════════════════════════════════════════
+AI: "Implementing fix...
+
+✓ Backend: added res.clearCookie('refreshToken')
+✓ Frontend: added axios.defaults.headers.common['Authorization'] = null
+✓ Frontend: added clearAuthState() call
+✓ Test: added E2E logout test
+✓ Test: verified cookie cleared
+
+Implementation complete.
+
+═══════════════════════════════════════════════════
+ STAGE: Verifying
+═══════════════════════════════════════════════════
+Running tests...
+
+✓ Unit tests: passed
+✓ E2E test (logout): passed
+✓ Manual verification: logged in → logout → verified not authenticated
+
+Bug fixed and verified.
+
+═══════════════════════════════════════════════════
+ STAGE: Completing
+═══════════════════════════════════════════════════
+✓ Committed: "fix: clear refresh token cookie on logout"
+✓ Updated log.md with bug analysis
+✓ Closed issue: #123
+
+Task TASK-056 completed."
+```
+
+**Результат:**
+- Bug найден через системный анализ, не через метод тыка
+- Root cause задокументирован
+- Решение обосновано
+- Проверено тестами
+- История сохранена (если похожий баг — сразу понятно где искать)
+
+---
+
+---
+
+## Заключение
+
+---
+
+## Заключение
+
+### Ключевая мысль
+
+ClearMethod превращает хаотичное взаимодействие с AI в **структурированное партнерство через протокол и процесс**.
+
+Это не магия и не замена разработчика. Это **новый способ работы**, где:
+- AI берет на себя рутину и исполнение
+- Человек сохраняет контроль и принимает решения
+- Процесс структурирован и воспроизводим
+- Результат предсказуем и качественен
+
+---
+
+### От хаоса к партнерству
+
+```
+┌────────────────────────────────────────────────────────┐
+│                      ХАОС                              │
+└────────────────────────────────────────────────────────┘
+
+Промпты → Надежда → Разочарование
+
+- "Сделай мне приложение" → hallucinations
+- Каждая сессия с нуля
+- История в чате, потом теряется
+- Непредсказуемое качество
+- Невоспроизводимые результаты
+
+─────────────────────────────────────────────────────────
+
+┌────────────────────────────────────────────────────────┐
+│                   ПАРТНЕРСТВО                          │
+└────────────────────────────────────────────────────────┘
+
+Протокол → Процесс → Результат
+
+- Структурированные workflows
+- Persistent state в файлах
+- Документированная история
+- Quality gates
+- Воспроизводимость
+- Масштабируемость
+```
+
+---
+
+### Путь к партнерству
+
+**1. Начните с простого**
+- Установите ClearMethod
+- Попробуйте простые задачи
+- Изучите как AI работает
+
+**2. Изучите философию**
+- [Фундаментальные принципы](принципы.md)
+- [Антипаттерны](антипаттерны.md) — Чего избегать
+- [Манифест](манифест.md)
+
+**3. Практикуйте**
+- [Быстрый старт](../07-руководства/быстрый-старт.md)
+- [Первая задача](../07-руководства/первая-задача.md)
+- [Примеры](../08-примеры/)
+
+**4. Адаптируйте под себя**
+- Настройте workflows
+- Определите safety levels
+- Создайте свои пакеты
+
+**5. Масштабируйте**
+- Внедрите в команде
+- Стандартизируйте процессы
+- Развивайте экосистему
+
+---
+
+### Финальная мысль
+
+AI революционизирует разработку. Но не через "магию", а через **структурированное партнерство**.
+
+ClearMethod — это не просто инструмент. Это **философия взаимодействия с AI**, где:
+
+✓ Человек управляет  
+✓ AI исполняет  
+✓ Процесс структурирован  
+✓ Результат предсказуем  
+
+**Добро пожаловать в новую эру разработки.**
+
+---
+
+## Следующие шаги
+
+📖 **Изучить философию:**
+- [Принципы](принципы.md) — Фундаментальные принципы
+- [ClearMethod как мета-рантайм](clearmethod-как-мета-рантайм.md) — Как работает исполнение
+- [Антипаттерны](антипаттерны.md) — Чего избегать
+
+🏗 **Понять архитектуру:**
+- [Обзор архитектуры](../03-архитектура/обзор.md)
+- [Ядро](../03-архитектура/ядро.md)
+- [Пакеты](../03-архитектура/пакеты.md)
+
+🚀 **Начать практику:**
+- [Быстрый старт](../07-руководства/быстрый-старт.md)
+- [Первый проект](../07-руководства/первый-проект.md)
+- [Первая задача](../07-руководства/первая-задача.md)
+

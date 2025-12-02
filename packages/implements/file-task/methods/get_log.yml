@@ -1,0 +1,40 @@
+# TASK.get_log - Получить журнал задачи
+
+method:
+  name: get_log
+  concept: TASK
+  implements: TASK.get_log
+  version: "0.1.0"
+  description: "Читает весь журнал действий задачи из log.md"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "ID задачи"
+
+preconditions:
+  - description: "Задача существует"
+    check: "exists(.cm/tasks/{task_id})"
+    error_message: "Task {task_id} not found"
+
+execute:
+  - let: log_file = ".cm/tasks/{task_id}/log.md"
+  
+  - "Read file {log_file}"
+  - "Split into lines"
+  - return: lines_array
+
+postconditions:
+  - description: "Возвращен массив строк"
+    check: "return_value is array"
+
+examples:
+  - code: |
+      log = TASK.get_log("TASK-123")
+      # Returns: ["[2025-11-23T10:00:00Z] Task created", ...]
+
+agent_notes: |
+  - Возвращает массив строк
+  - Каждая строка = одна запись журнала
+  - Порядок: от старых к новым

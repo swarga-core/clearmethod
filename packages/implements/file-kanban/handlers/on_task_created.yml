@@ -1,0 +1,48 @@
+handler: on_task_created
+description: "Update board when new task is created"
+
+subscribes_to: task.created
+
+filter:
+  config.packages.file_kanban.enabled: true
+  config.packages.file_kanban.auto_update: true
+
+priority: 30
+
+instructions:
+  - let: task_id = event.payload.task_id
+  
+  - info: "New task {task_id} created, updating kanban board"
+  
+  # Get task state
+  - TASK.get_state(task_id)
+    into: task_state
+  
+  # Determine default column
+  - read: ".cm/project.yml"
+    format: yaml
+    into: config
+  
+  - let: columns = config.packages?.file_kanban?.columns || []
+  - let: default_column = null
+  
+  - for: col in columns
+    do:
+      - if: col.states.includes(task_state)
+        then:
+          - let: default_column = col.name
+          - break
+  
+  # Set kanban_column property
+  - if: default_column
+    then:
+      - TASK.set_property(task_id, "kanban_column", default_column)
+      - info: "Assigned task {task_id} to column: {default_column}"
+  
+  # Update board
+  - KANBAN.update_board(false)
+
+notes: |
+  This handler automatically adds new tasks to the kanban board.
+  Tasks are placed in columns based on their initial state.
+

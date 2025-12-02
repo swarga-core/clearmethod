@@ -1,0 +1,72 @@
+method: get_status
+description: "Get current repository status"
+
+params: []
+
+returns:
+  type: object
+
+instructions:
+  group: "Get current branch"
+  do:
+    - terminal: "git branch --show-current"
+      into: branch
+  
+  group: "Get file statuses"
+  do:
+    - terminal: "git status --porcelain"
+      into: status_output
+    
+    - let: modified = []
+    - let: staged = []
+    - let: untracked = []
+    
+    - for: line in status_output.split("\n")
+      do:
+        - if: line.trim().length == 0
+          then:
+            - continue
+        
+        - let: status_code = line.substring(0, 2)
+        - let: file_path = line.substring(3).trim()
+        
+        # Staged changes (first character)
+        - if: status_code[0] in ["M", "A", "D", "R", "C"]
+          then:
+            - let: staged.push(file_path)
+        
+        # Modified unstaged (second character)
+        - if: status_code[1] == "M"
+          then:
+            - let: modified.push(file_path)
+        
+        # Untracked
+        - if: status_code == "??"
+          then:
+            - let: untracked.push(file_path)
+  
+  group: "Get ahead/behind info"
+  do:
+    - terminal: "git rev-list --left-right --count HEAD...@{u} 2>/dev/null || echo '0\t0'"
+      into: ahead_behind
+    
+    - let: parts = ahead_behind.trim().split("\t")
+    - let: ahead = parseInt(parts[0] || "0")
+    - let: behind = parseInt(parts[1] || "0")
+  
+  group: "Build result"
+  do:
+    - let: result = {
+        branch: branch.trim(),
+        modified: modified,
+        staged: staged,
+        untracked: untracked,
+        ahead: ahead,
+        behind: behind,
+        clean: modified.length == 0 && staged.length == 0 && untracked.length == 0
+      }
+    
+    - info: "Status: {modified.length} modified, {staged.length} staged, {untracked.length} untracked"
+  
+  - return: result
+

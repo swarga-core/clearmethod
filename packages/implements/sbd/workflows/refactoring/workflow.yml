@@ -1,0 +1,87 @@
+name: sbd.refactoring
+description: "Refactoring workflow - улучшение кода без изменения функциональности"
+version: "1.0.0"
+
+# Workflow для рефакторинга существующего кода
+# Ключевой принцип: функциональность НЕ меняется
+
+states:
+  - id: analyzing
+    name: "Анализ"
+    description: "Анализ кода, который требует рефакторинга"
+    
+  - id: planning
+    name: "Планирование"
+    description: "Планирование изменений, определение стратегии"
+    
+  - id: refactoring
+    name: "Рефакторинг"
+    description: "Выполнение рефакторинга"
+    
+  - id: testing
+    name: "Тестирование"
+    description: "Проверка что функциональность не сломалась"
+    
+  - id: completing
+    name: "Завершение"
+    description: "Финализация, документация"
+
+# Граф переходов
+transitions:
+  - from: null
+    to: analyzing
+    description: "Начало рефакторинга"
+  
+  - from: analyzing
+    to: planning
+    description: "Код проанализирован, планируем изменения"
+  
+  - from: planning
+    to: refactoring
+    description: "План готов, начинаем рефакторинг"
+  
+  - from: refactoring
+    to: testing
+    description: "Рефакторинг выполнен, тестируем"
+  
+  - from: testing
+    to: completing
+    description: "Тесты прошли, завершаем"
+    
+  - from: testing
+    to: refactoring
+    description: "Тесты не прошли, корректируем"
+    condition: "Если функциональность сломалась"
+  
+  - from: completing
+    to: null
+    description: "Рефакторинг завершен"
+
+# Начальное состояние
+initial_state: analyzing
+
+# Конечное состояние
+final_state: completing
+
+# Особенности refactoring workflow
+characteristics:
+  - "Фокус на улучшении качества кода"
+  - "Функциональность НЕ меняется"
+  - "Обязательное тестирование после изменений"
+  - "Incremental подход (small steps)"
+  - "Все тесты должны проходить"
+
+# Quality gates
+quality_gates:
+  testing:
+    - "All existing tests still pass"
+    - "No behavioral changes"
+    - "Code coverage not decreased"
+
+# Интеграция с событиями
+events:
+  on_start:
+    - package.registered
+  on_complete:
+    - task.workflow_completed
+

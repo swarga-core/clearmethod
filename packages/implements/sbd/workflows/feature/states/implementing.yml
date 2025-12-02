@@ -1,0 +1,98 @@
+# State: Implementing
+# Реализация решения
+
+state:
+  status: implementing
+  title: "Implementing"
+  description: "Реализация спроектированного решения"
+
+# Предусловия
+preconditions:
+  - description: "Дизайн одобрен"
+    check: "TASK.get_property(task_id, 'design_approved') == true"
+    error_message: "Cannot implement without approved design"
+
+# Выполнение
+execute:
+  # 1. Приветствие
+  - |
+    Inform user: "Starting 'Implementing' phase.
+    Goal: Implement the approved design."
+
+  # 2. Прочитать design.md
+  - "Read design.md from task folder"
+
+  # 3. Следовать плану реализации
+  - group: "Follow implementation plan from design.md"
+    do:
+      - "Create and modify files according to design"
+      - "Implement components step by step"
+      - "Follow defined architecture"
+      - "Apply technical decisions"
+
+  # 4. Пошаговая реализация
+  - for: step in implementation_plan
+    do:
+      - "Implement {step}"
+      - "Test locally if possible"
+      - "Log progress: TASK.log(task_id, 'Completed: {step}')"
+      - "Inform user about progress"
+
+  # 5. Проверка соответствия дизайну
+  - "Verify implementation matches design"
+  - "Check all components are implemented"
+
+  # 6. Базовое тестирование
+  - group: "Perform basic checks"
+    do:
+      - "Verify code compiles and runs"
+      - "Check for obvious errors"
+      - "Test basic functionality"
+
+  # 7. Опциональные заметки
+  - if: deviations_or_notes_exist
+    then:
+      - group: "Document implementation notes"
+        do:
+          - "Document deviations from design (if any)"
+          - "Add implementation notes"
+          - "List known issues"
+          - "Note next steps"
+          - "Write implementation.md to task folder"
+
+  # 8. Установить свойство
+  - TASK.set_property(task_id, "implementation_complete", true)
+
+  # 9. Логирование
+  - TASK.log(task_id, "Implementation completed")
+
+  # 10. Сообщить пользователю
+  - |
+    Inform user: "Implementation complete!
+    Next phase: 'Verifying' - thorough testing and verification."
+
+# Постусловия
+postconditions:
+  - description: "Реализация завершена"
+    check: "TASK.get_property(task_id, 'implementation_complete') == true"
+    error_message: "Implementation must be marked complete"
+
+  # Примечание: мы не можем автоматически проверить что код работает,
+  # поэтому полагаемся на свойство implementation_complete
+
+# Возможные следующие состояния
+next_states:
+  - verifying # Основной путь
+  - designing # Возврат если дизайн оказался неверным
+
+# Примечания для агента
+agent_notes: |
+  Ключевой этап - здесь создается реальная ценность!
+
+  1. **Следуй дизайну**: Не изобретай велосипед, следуй утвержденному дизайну
+  2. **Пошаговость**: Реализуй step-by-step, тестируй по ходу
+  3. **Коммуникация**: Информируй пользователя о прогрессе
+  4. **Качество**: Пиши качественный код, следуй best practices
+  5. **Документируй**: Если отклонился от дизайна - документируй почему
+
+  Если дизайн оказался неверным - не стесняйся вернуться в designing.

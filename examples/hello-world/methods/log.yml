@@ -1,0 +1,39 @@
+method:
+  name: log
+  concept: HELLO_TASK
+  implements: TASK.log
+  version: "0.1.0"
+  description: "Добавляет запись в журнал действий задачи (массив log внутри YAML)"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "Уникальный идентификатор задачи"
+  
+  - name: entry
+    type: string
+    required: true
+    description: "Запись в журнал"
+
+preconditions:
+  - validate: exists(".cm/tasks/{task_id}.yml")
+    error: "Файл задачи {task_id}.yml не найден"
+
+execute:
+  - read: ".cm/tasks/{task_id}.yml"
+    as: yaml
+    into: task_data
+  
+  - let: log_entry = "[{current_datetime()}] {entry}"
+  - "Append log_entry to task_data.log array"
+  
+  - write: "{task_data}"
+    as: yaml
+    to: ".cm/tasks/{task_id}.yml"
+  
+  - info: "Log entry added to task {task_id}: {entry}"
+
+on_error:
+  - error: "Не удалось добавить запись в лог задачи {task_id}"
+

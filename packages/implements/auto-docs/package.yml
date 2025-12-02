@@ -1,0 +1,99 @@
+id: auto-docs
+name: "Automatic Documentation Generator"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Automatic documentation generation integrated with workflow stages.
+  Generates and maintains documentation as code evolves.
+  
+  Key features:
+  - Auto-generate API documentation
+  - Create architectural diagrams
+  - Maintain README files
+  - Generate usage examples
+  - Keep docs in sync with code
+  - Stage-triggered documentation updates
+
+depends_on:
+  - core-concept    # TASK, WORKFLOW, EVENT
+  - file-task       # For task access
+  - basic-events    # For event handling
+
+provides:
+  methods:
+    - DOCS.generate         # Generate documentation
+    - DOCS.update           # Update existing docs
+    - DOCS.validate         # Check docs completeness
+    - DOCS.get_coverage     # Documentation coverage metrics
+  
+  handlers:
+    - on_stage_completed    # Auto-generate docs after stages
+    - on_workflow_completed # Final documentation pass
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+
+config_template:
+  auto_docs:
+    enabled: true
+    
+    # Output locations
+    output:
+      api_docs: "docs/api"
+      guides: "docs/guides"
+      readme: "README.md"
+      changelog: "CHANGELOG.md"
+    
+    # Generation triggers
+    auto_generate:
+      enabled: true
+      on_stages:
+        - implementing    # Generate API docs
+        - completing      # Generate full docs
+      on_workflow_complete: true
+    
+    # Documentation types
+    types:
+      api:
+        enabled: true
+        format: "markdown"  # markdown, html, openapi
+        include_examples: true
+        include_types: true
+      
+      architecture:
+        enabled: true
+        diagrams: true
+        diagram_format: "mermaid"
+      
+      readme:
+        enabled: true
+        auto_update: true
+        sections:
+          - overview
+          - installation
+          - usage
+          - api
+          - contributing
+      
+      changelog:
+        enabled: true
+        format: "keep-a-changelog"
+        auto_update_on_complete: true
+    
+    # Analysis
+    coverage:
+      min_api_coverage: 80
+      warn_on_low_coverage: true
+      check_examples: true
+
+notes: |
+  Auto-Docs keeps documentation in sync with code automatically.
+  
+  Philosophy:
+  - Documentation is a first-class artifact
+  - Generated during workflow, not after
+  - Always up-to-date
+  - Comprehensive and useful
+

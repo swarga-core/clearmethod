@@ -1,0 +1,41 @@
+name: completing
+description: "Завершение рефакторинга"
+
+instructions:
+  - EVENT.emit("task.stage_started", {task_id: task_id, stage: "completing"})
+  - TASK.set_property(task_id, "stage", "completing")
+  
+  - info: "Document the refactoring results"
+  - ask: "Code quality improvements?"
+    into: improvements
+  
+  - write: ".cm/tasks/{task_id}/refactoring-results.md"
+    content: |
+      # Refactoring Results
+      
+      ## Files Modified
+      {TASK.get_property(task_id, "files_modified")}
+      
+      ## Techniques Used
+      {TASK.get_property(task_id, "techniques_used")}
+      
+      ## Improvements
+      {improvements}
+      
+      ## Verification
+      - All tests pass: ✅
+      - No behavioral changes: ✅
+  
+  - TASK.set_property(task_id, "workflow_complete", true)
+  - TASK.set_state(task_id, "completed")
+  - TASK.log(task_id, "🎉 Refactoring completed successfully!")
+  
+  - EVENT.emit("task.workflow_completed", {
+      task_id: task_id,
+      workflow: "sbd.refactoring",
+      result: "success"
+    })
+
+postconditions:
+  - TASK.get_property(task_id, "workflow_complete") == true
+

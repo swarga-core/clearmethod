@@ -1,0 +1,75 @@
+# State: Creating
+# Создание и спецификация задачи
+
+state:
+  status: creating
+  title: "Creating"
+  description: "Создание задачи и написание спецификации"
+
+preconditions:
+  - description: "Задача создана"
+    check: "exists(.cm/tasks/{task_id})"
+
+  - description: "Workflow еще не начат (status = null)"
+    check: "TASK.get_state(task_id) == null"
+
+execute:
+  # 1. Приветствие и контекст
+  - info: "Starting 'Creating' phase"
+  - info: "Goal: Create clear, detailed specifications for the task"
+
+  # 2. Анализируем существующую спецификацию
+  - "Read specs.md from task folder"
+  - let: existing_specs = file_content
+
+  # 3. Диалог с пользователем
+  - if: existing_specs is empty or incomplete
+    then:
+      - group: "Gather requirements from user"
+        do:
+          - "Ask: What problem does this solve?"
+          - "Ask: Who is the target user?"
+          - "Ask: What are the acceptance criteria?"
+          - "Ask: Are there any constraints or dependencies?"
+          - "Compile comprehensive specification based on answers"
+          - "Write specification to specs.md"
+    else:
+      - "Review existing specs with user"
+      - "Ask if any clarifications needed"
+      - "Update specs.md if needed"
+
+  # 4. Установить свойство specs_complete
+  - TASK.set_property(task_id, "specs_complete", true)
+
+  # 5. Логирование
+  - TASK.log(task_id, "Specifications completed")
+
+  # 6. Сообщить пользователю
+  - info: "Specifications are ready"
+  - info: "Next phase: 'Analyzing' - deep dive into requirements and context"
+
+postconditions:
+  - description: "Спецификация написана"
+    check: "file_exists(.cm/tasks/{task_id}/specs.md)"
+    error_message: "specs.md must exist"
+
+  - description: "Спецификация не пустая"
+    check: "file_not_empty(.cm/tasks/{task_id}/specs.md)"
+    error_message: "specs.md cannot be empty"
+
+  - description: "Свойство specs_complete установлено"
+    check: "TASK.get_property(task_id, 'specs_complete') == true"
+    error_message: "specs_complete property must be true"
+
+next_states:
+  - analyzing
+
+agent_notes: |
+  Это первое состояние workflow. Важно:
+
+  1. Задача уже создана (TASK.create)
+  2. Файл specs.md уже существует, но может быть пустым
+  3. Твоя задача - наполнить его качественными требованиями
+  4. Проси уточнений у пользователя
+  5. Убедись, что спецификация полная и понятная
+  6. Не торопись - качественные specs = половина успеха

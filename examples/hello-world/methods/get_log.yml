@@ -1,0 +1,27 @@
+method:
+  name: get_log
+  concept: HELLO_TASK
+  implements: TASK.get_log
+  version: "0.1.0"
+  description: "Возвращает весь журнал действий задачи из массива log в YAML"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "Уникальный идентификатор задачи"
+
+preconditions:
+  - validate: exists(".cm/tasks/{task_id}.yml")
+    error: "Файл задачи {task_id}.yml не найден"
+
+execute:
+  - read: ".cm/tasks/{task_id}.yml"
+    as: yaml
+    into: task_data
+  
+  - return: task_data.log
+
+on_error:
+  - error: "Не удалось получить лог задачи {task_id}"
+

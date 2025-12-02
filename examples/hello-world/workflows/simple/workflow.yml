@@ -1,0 +1,72 @@
+workflow:
+  id: hello-world.simple
+  name: "Simple Test Workflow"
+  version: "0.1.0"
+  description: "Простой 3-этапный workflow для тестирования механик ClearMethod"
+
+# Граф состояний
+states:
+  - id: start
+    name: "Start"
+    description: "Начальное состояние - приветствие и настройка"
+    initial: true
+    file: states/start.yml
+  
+  - id: process
+    name: "Process"
+    description: "Основная обработка - тестируем CML конструкции"
+    file: states/process.yml
+  
+  - id: finish
+    name: "Finish"
+    description: "Завершение - подведение итогов"
+    final: true
+    file: states/finish.yml
+
+# Переходы между состояниями
+transitions:
+  - from: start
+    to: process
+    description: "После настройки переходим к обработке"
+  
+  - from: process
+    to: finish
+    description: "После обработки завершаем"
+  
+  # Опциональный возврат для тестирования
+  - from: process
+    to: start
+    description: "Можно вернуться к началу для повторного теста"
+
+# Цель workflow
+purpose: |
+  Этот workflow создан для тестирования:
+  - Базовых переходов между состояниями
+  - Вызовов методов концептов (TASK.*)
+  - CML конструкций (if, group, variables)
+  - Preconditions и postconditions
+  - Резолвинга концептов через project.yml
+  
+  Не используйте для реальной работы!
+
+# Примечания для тестирования
+test_scenarios:
+  - name: "Basic flow"
+    description: "Пройти все 3 состояния последовательно"
+    steps:
+      - "/cm-start hello-world.simple TEST-001"
+      - "/cm-next"
+      - "/cm-next"
+  
+  - name: "Property test"
+    description: "Проверить set/get свойств"
+    check: "Свойства устанавливаются и читаются корректно"
+  
+  - name: "Logging test"
+    description: "Проверить журналирование"
+    check: "Записи добавляются в лог"
+  
+  - name: "State isolation"
+    description: "Проверить изоляцию состояний"
+    check: "Состояния взаимодействуют только через свойства задачи"
+

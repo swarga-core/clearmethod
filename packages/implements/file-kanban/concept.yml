@@ -1,0 +1,51 @@
+concept:
+  id: FILE_KANBAN
+  name: "File-based Kanban"
+  type: concrete
+  implements: KANBAN
+  version: "0.1.0"
+  description: |
+    File-based implementation of KANBAN concept.
+    Uses task properties for column tracking and generates markdown board.
+
+properties:
+  - name: board_file
+    type: string
+    description: "Path to board markdown file"
+    required: true
+    default: ".cm/kanban/board.md"
+  
+  - name: columns_config
+    type: array
+    description: "Column configuration from project.yml"
+    required: true
+  
+  - name: last_update
+    type: string
+    description: "Timestamp of last board update"
+    required: false
+
+methods:
+  # All methods implemented in methods/ folder
+  - update_board
+  - move_task
+  - get_board_state
+  - get_column_tasks
+  - add_column
+  - remove_column
+  - generate_markdown
+
+event_handlers:
+  # Handlers in handlers/ folder
+  - on_task_created
+  - on_task_state_changed
+  - on_workflow_completed
+
+notes: |
+  FILE_KANBAN implementation:
+  - Stores column assignment in task property: kanban_column
+  - Generates markdown board at .cm/kanban/board.md
+  - Auto-updates on task events (if configured)
+  - Column-to-state mapping is configurable per project
+  - Falls back to state-based column if kanban_column not set
+

@@ -1,0 +1,112 @@
+id: test-runner
+name: "Intelligent Test Runner"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Intelligent test execution integrated with workflow stages.
+  Automatically runs relevant tests, tracks coverage, and provides insights.
+  
+  Key features:
+  - Smart test selection (only run affected tests)
+  - Parallel test execution
+  - Coverage tracking and reporting
+  - Flaky test detection
+  - Performance benchmarking
+  - Integration with quality gates
+
+depends_on:
+  - core-concept    # TASK, WORKFLOW, EVENT
+  - file-task       # For task access
+  - basic-events    # For event handling
+  - qa-gates        # For quality integration
+
+provides:
+  methods:
+    - TEST.run              # Run tests
+    - TEST.run_affected     # Run only affected tests
+    - TEST.get_coverage     # Get coverage report
+    - TEST.get_results      # Get test results
+    - TEST.watch            # Watch mode for tests
+  
+  handlers:
+    - on_stage_completed    # Auto-run tests after stages
+    - on_file_changed       # Run affected tests
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+
+config_template:
+  test_runner:
+    enabled: true
+    
+    # Test framework
+    framework: "jest"  # jest, pytest, mocha, etc.
+    config_file: "jest.config.js"
+    
+    # Execution
+    execution:
+      parallel: true
+      max_workers: 4
+      timeout: 30000  # ms
+      bail: false  # Stop on first failure
+    
+    # Smart test selection
+    smart_selection:
+      enabled: true
+      strategy: "affected"  # affected, all, changed
+      use_git_diff: true
+      use_imports_analysis: true
+    
+    # Coverage
+    coverage:
+      enabled: true
+      threshold:
+        global:
+          lines: 80
+          functions: 75
+          branches: 70
+          statements: 80
+      report_formats: ["text", "lcov", "html"]
+      output_dir: "coverage"
+    
+    # Auto-run triggers
+    auto_run:
+      enabled: true
+      on_stages:
+        - implementing
+        - verifying
+      on_file_change: true
+      debounce_ms: 1000
+    
+    # Flaky test detection
+    flaky_detection:
+      enabled: true
+      retry_count: 3
+      mark_flaky_threshold: 0.5  # 50% pass rate
+    
+    # Performance
+    performance:
+      enabled: true
+      baseline_file: ".cm/test-performance.json"
+      warn_on_slowdown: true
+      slowdown_threshold: 1.5  # 50% slower
+    
+    # Integration
+    quality_gates:
+      block_on_failure: true
+      min_coverage: 80
+      max_failed_tests: 0
+
+notes: |
+  Test Runner provides intelligent test execution integrated
+  into the development workflow.
+  
+  Goals:
+  - Fast feedback (run only what's needed)
+  - High coverage enforcement
+  - Detect flaky tests early
+  - Performance tracking
+  - Seamless integration
+

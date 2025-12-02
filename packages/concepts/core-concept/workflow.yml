@@ -1,0 +1,213 @@
+# WORKFLOW - Абстрактный концепт (интерфейс)
+# Определяет интерфейс для работы с рабочими процессами
+
+concept:
+  id: WORKFLOW
+  name: "Workflow"
+  type: abstract # Это интерфейс
+  version: "0.1.0"
+  description: |
+    Абстрактный концепт для работы с рабочими процессами (workflows).
+
+    Workflow - это граф состояний (state machine), определяющий траекторию задачи.
+    Множество задач может использовать один workflow, каждая хранит свое текущее состояние.
+
+    Ключевая идея:
+    - Task хранит: "Я в состоянии X"
+    - Workflow определяет: "Состояние X означает делать A, B, C"
+
+# Свойства workflow
+properties:
+  - name: id
+    type: string
+    description: "Уникальный идентификатор workflow (например, 'psd.feature')"
+    required: true
+
+  - name: title
+    type: string
+    description: "Название workflow"
+    required: true
+
+  - name: description
+    type: text
+    description: "Описание назначения workflow"
+    required: false
+
+  - name: version
+    type: string
+    description: "Версия workflow"
+    required: true
+
+  - name: states
+    type: array
+    description: "Список состояний workflow"
+    required: true
+
+  - name: start_state
+    type: string
+    description: "Начальное состояние"
+    required: true
+
+  - name: end_states
+    type: array<string>
+    description: "Конечные состояния"
+    required: true
+
+# Методы (сигнатуры)
+methods:
+  - name: start
+    description: "Инициировать workflow для задачи"
+    signature: "start(task_id: string) → void"
+    parameters:
+      - name: task_id
+        type: string
+        required: true
+        description: "ID задачи для запуска workflow"
+    returns: void
+    notes: |
+      - Проверяет, что workflow существует
+      - Проверяет, что задача не привязана к другому workflow
+      - Устанавливает начальное состояние задачи
+      - Выполняет entry_actions начального состояния
+
+  - name: go
+    description: "Перевести задачу в указанное состояние"
+    signature: "go(task_id: string, target_state: string) → void"
+    parameters:
+      - name: task_id
+        type: string
+        required: true
+        description: "ID задачи"
+
+      - name: target_state
+        type: string
+        required: true
+        description: "Целевое состояние"
+    returns: void
+    notes: |
+      - Проверяет, что переход разрешен (guard conditions)
+      - Выполняет exit_actions текущего состояния
+      - Выполняет transition actions (если есть)
+      - Выполняет entry_actions целевого состояния
+      - Обновляет состояние задачи
+      - Логирует переход
+
+  - name: next
+    description: "Перейти к следующему состоянию"
+    signature: "next(task_id: string) → void"
+    parameters:
+      - name: task_id
+        type: string
+        required: true
+        description: "ID задачи"
+    returns: void
+    notes: |
+      - Определяет возможные следующие состояния
+      - Если один вариант - переходит автоматически
+      - Если несколько - запрашивает выбор у пользователя
+      - Вызывает go() для выполнения перехода
+
+  - name: goback
+    description: "Вернуться к предыдущему состоянию"
+    signature: "goback(task_id: string) → void"
+    parameters:
+      - name: task_id
+        type: string
+        required: true
+        description: "ID задачи"
+    returns: void
+    notes: |
+      - Использует историю переходов
+      - Выполняет обратные actions (если определены)
+      - Предупреждает о возможных последствиях
+
+  - name: rework
+    description: "Перезапустить текущее состояние"
+    signature: "rework(task_id: string) → void"
+    parameters:
+      - name: task_id
+        type: string
+        required: true
+        description: "ID задачи"
+    returns: void
+    notes: |
+      - Повторяет entry_actions текущего состояния
+      - Может отменить эффекты предыдущего прохождения
+
+  - name: finalize
+    description: "Завершить workflow"
+    signature: "finalize(task_id: string) → void"
+    parameters:
+      - name: task_id
+        type: string
+        required: true
+        description: "ID задачи"
+    returns: void
+    notes: |
+      - Проверяет, что задача в конечном состоянии
+      - Выполняет финализирующие actions
+      - Фиксирует завершение в логе
+
+# Структура состояния (для справки)
+state_structure:
+  properties:
+    - status: "Уникальный идентификатор состояния"
+    - title: "Человекочитаемое название"
+    - description: "Описание состояния"
+    - preconditions: "Условия для входа в состояние"
+    - postconditions: "Условия для выхода из состояния"
+    - execute: "Команды для выполнения"
+    - next_states: "Список возможных следующих состояний"
+
+  notes: |
+    ВАЖНО: Состояния изолированы - не знают друг о друге.
+    Координация через свойства задачи, а не через проверку других состояний.
+
+# Примеры использования
+examples:
+  - description: "Запуск workflow"
+    code: |
+      WORKFLOW.start("TASK-123")
+      # Задача переходит в начальное состояние и выполняет его
+
+  - description: "Переход в конкретное состояние"
+    code: |
+      WORKFLOW.go("TASK-123", "implementing")
+
+  - description: "Переход к следующему состоянию"
+    code: |
+      WORKFLOW.next("TASK-123")
+      # Агент определяет следующее состояние и переходит
+
+  - description: "Завершение workflow"
+    code: |
+      WORKFLOW.finalize("TASK-123")
+
+# Реализации
+# Конкретные workflows предоставляются расширениями
+implementations:
+  - id: psd.feature
+    name: "Feature Development Workflow"
+    package: sbd
+    description: "Workflow для разработки новых фич"
+    states: 6
+    status: mvp
+
+  - id: psd.bugfix
+    name: "Bug Fix Workflow"
+    package: sbd
+    description: "Workflow для исправления багов"
+    status: planned
+
+# Примечания для разработчиков расширений
+notes: |
+  При создании конкретного workflow:
+
+  1. Workflow описывается в YAML файле в расширении
+  2. Каждое состояние - отдельный файл в подпапке states/
+  3. Граф переходов определяется в workflow.yml
+  4. Guard conditions описываются в transitions (в workflow.yml)
+  5. Состояния должны быть изолированными (координация через свойства задачи)
+  6. Обязательно определить start_state и end_states
+  7. Все transitions должны логироваться
+

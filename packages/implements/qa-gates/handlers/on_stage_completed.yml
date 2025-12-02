@@ -1,0 +1,116 @@
+handler: on_stage_completed
+description: "Check quality gates when stage completes"
+
+subscribes_to: task.stage_completed
+
+filter:
+  # Only react if qa_gates is enabled
+  config.packages.qa_gates.enabled: true
+
+priority: 60  # Run after VCS operations (priority 50)
+
+instructions:
+  group: "Extract event data"
+  do:
+    - let: task_id = event.payload.task_id
+    - let: stage = event.payload.stage
+    - let: duration = event.payload.duration_ms || 0
+    
+    - info: "Task {task_id} completed stage '{stage}', checking quality gates"
+  
+  group: "Check if gate is configured for this stage"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: gate_config = config.packages?.qa_gates?.gates?.[stage]
+    
+    - if: !gate_config
+      then:
+        - info: "No quality gate configured for stage '{stage}', skipping"
+        - return
+    
+    - if: !gate_config.enabled
+      then:
+        - info: "Quality gate disabled for stage '{stage}', skipping"
+        - return
+  
+  group: "Run quality gate checks"
+  do:
+    - QA_GATE.check(stage, task_id, null)
+      into: gate_result
+    
+    - info: "Quality gate '{stage}': {gate_result.passed ? 'PASSED' : 'FAILED'}"
+  
+  group: "Handle failure"
+  do:
+    - if: !gate_result.passed
+      then:
+        - let: on_failure = config.packages?.qa_gates?.on_failure
+        
+        # Create task note about failure
+        - if: on_failure?.create_task_note
+          then:
+            - let: failed_checks = gate_result.checks.filter(c => !c.passed)
+            - let: note = "❌ Quality Gate Failed:\n\n"
+            
+            - for: check in failed_checks
+              do:
+                - let: note = note + "- {check.name}: {check.message}\n"
+            
+            - TASK.set_property(task_id, "qa_gate_failure", note)
+        
+        # Block progression if configured
+        - if: on_failure?.block_progression && gate_config.require_all_passed
+          then:
+            - warn: "Quality gate failed. Fix issues before progressing to next stage."
+            - TASK.set_property(task_id, "qa_gate_blocked", true)
+        
+        # Emit failure event (already done in check method)
+        # Additional actions could be triggered here
+  
+  group: "Handle success"
+  do:
+    - if: gate_result.passed
+      then:
+        # Clear any previous blocks
+        - TASK.set_property(task_id, "qa_gate_blocked", false)
+        - TASK.set_property(task_id, "qa_gate_failure", null)
+        
+        # Record success
+        - TASK.set_property(task_id, "last_qa_gate_passed", {
+            stage: stage,
+            timestamp: now()
+          })
+
+notes: |
+  This handler runs quality gates automatically when stages complete.
+  
+  It can:
+  - Run linters, tests, coverage checks
+  - Block workflow progression on failures
+  - Log failures to task
+  - Emit events for notifications
+  
+  Example configuration:
+  
+  packages:
+    qa_gates:
+      enabled: true
+      gates:
+        implementing:
+          enabled: true
+          checks:
+            - linter
+            - basic_tests
+        verifying:
+          enabled: true
+          checks:
+            - linter
+            - all_tests
+            - coverage
+      on_failure:
+        block_progression: true
+        create_task_note: true
+

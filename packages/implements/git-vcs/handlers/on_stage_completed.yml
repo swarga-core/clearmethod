@@ -1,0 +1,108 @@
+handler: on_stage_completed
+description: "Handle task stage completion - auto-commit if configured"
+
+subscribes_to: task.stage_completed
+
+filter:
+  # Only react if auto_commit is enabled
+  config.packages.git_vcs.auto_commit.enabled: true
+
+priority: 50
+
+instructions:
+  group: "Extract event data"
+  do:
+    - let: task_id = event.payload.task_id
+    - let: stage = event.payload.stage
+    - let: duration = event.payload.duration_ms || 0
+    
+    - info: "Task {task_id} completed stage '{stage}'"
+  
+  group: "Check if auto-commit enabled for this stage"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: auto_stages = config.packages?.git_vcs?.auto_commit?.stages || []
+    
+    - if: !auto_stages.includes(stage)
+      then:
+        - info: "Auto-commit not enabled for stage '{stage}', skipping"
+        - return
+  
+  group: "Check for changes"
+  do:
+    - let: status = VCS.get_status()
+    
+    - if: status.clean
+      then:
+        - info: "No changes to commit"
+        - return
+    
+    - info: "Found {status.modified.length + status.staged.length + status.untracked.length} file(s) changed"
+  
+  group: "Build commit message"
+  do:
+    - let: template = config.packages?.git_vcs?.auto_commit?.message_template || "chore({{task_id}}): {{stage}} completed"
+    
+    - TASK.get_property(task_id, "title")
+      into: task_title
+    
+    # Replace template variables
+    - let: message = template
+      .replace("{{task_id}}", task_id)
+      .replace("{{stage}}", stage)
+      .replace("{{task_title}}", task_title || "")
+      .replace("{{duration}}", Math.round(duration / 1000) + "s")
+  
+  group: "Commit changes"
+  do:
+    - VCS.commit(message, [], false)
+      into: commit_result
+    
+    - info: "Auto-committed: {commit_result.commit_hash.substring(0, 8)}"
+    
+    - TASK.log(task_id, "Auto-commit created: {message}")
+  
+  group: "Auto-push if configured"
+  do:
+    - let: auto_push_stages = config.packages?.git_vcs?.auto_push?.on_stages || []
+    
+    - if: auto_push_stages.includes(stage) && config.packages?.git_vcs?.auto_push?.enabled
+      then:
+        - info: "Auto-push enabled for stage '{stage}'"
+        
+        # Check if tests required
+        - if: config.packages?.git_vcs?.auto_push?.require_tests
+          then:
+            - TASK.get_property(task_id, "tests_passed")
+              into: tests_passed
+            
+            - if: !tests_passed
+              then:
+                - warn: "Tests not passed, skipping auto-push"
+                - return
+        
+        - VCS.push(null, false)
+          into: push_result
+        
+        - info: "Auto-pushed {push_result.commits_pushed} commit(s)"
+        
+        - TASK.log(task_id, "Auto-push completed")
+
+notes: |
+  This handler automatically commits changes when stages complete.
+  Configuration controls which stages trigger auto-commit.
+  
+  Example configuration:
+  
+  packages:
+    git_vcs:
+      auto_commit:
+        enabled: true
+        stages:
+          - implementing
+          - completing
+        message_template: "feat({{task_id}}): {{stage}} completed"
+

@@ -1,0 +1,17 @@
+id: notification-concept
+name: "Notification Concept"
+type: concept
+version: "1.0.0"
+
+description: |
+  Abstract notification concept for sending messages and alerts.
+  Enables workflow notifications via multiple channels (Slack, email, console, etc.)
+
+provides:
+  concepts:
+    - NOTIFICATION (abstract)
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+

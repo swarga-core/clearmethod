@@ -1,0 +1,17 @@
+id: qa-gate-concept
+name: "Quality Assurance Gate Concept"
+type: concept
+version: "1.0.0"
+
+description: |
+  Abstract Quality Assurance Gate concept defining interface for code quality
+  validation, linting, testing, and coverage checks at workflow stages.
+
+provides:
+  concepts:
+    - QA_GATE (abstract)
+
+status: stable
+author: "ClearMethod Team"
+license: "MIT"
+

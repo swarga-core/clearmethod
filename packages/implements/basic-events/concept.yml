@@ -1,0 +1,49 @@
+name: BASIC_EVENT
+implements: EVENT
+type: concrete
+description: |
+  File-based implementation of the EVENT concept.
+  
+  Uses YAML files for storage:
+  - .cm/events/events.yml - chronological event log
+  - .cm/events/subscriptions.yml - handler subscriptions
+  
+  Execution model:
+  - Synchronous by default
+  - Priority-based handler ordering (lower number = higher priority)
+  - Handlers execute in isolation with try/catch
+  - Failed handlers don't stop other handlers
+  - Cascade support (handlers can emit new events)
+  - Max cascade depth: 10 (protection from infinite loops)
+
+storage:
+  events_log: .cm/events/events.yml
+  subscriptions: .cm/events/subscriptions.yml
+
+methods:
+  emit:
+    implementation: extensions/basic-events/methods/emit.yml
+    description: Emit event and trigger handlers
+  
+  subscribe:
+    implementation: extensions/basic-events/methods/subscribe.yml
+    description: Register event handler
+  
+  unsubscribe:
+    implementation: extensions/basic-events/methods/unsubscribe.yml
+    description: Remove event handler
+  
+  get_history:
+    implementation: extensions/basic-events/methods/get_history.yml
+    description: Query event history
+  
+  list_subscriptions:
+    implementation: extensions/basic-events/methods/list_subscriptions.yml
+    description: List active subscriptions
+
+configuration:
+  max_cascade_depth: 10
+  default_priority: 100
+  log_retention_days: 90
+  enable_debug_logging: false
+

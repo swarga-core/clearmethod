@@ -1,0 +1,41 @@
+# TASK.get_state - Получить текущее состояние задачи
+
+method:
+  name: get_state
+  concept: TASK
+  implements: TASK.get_state
+  version: "0.1.0"
+  description: "Читает текущее состояние задачи из status.yml"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "ID задачи"
+
+preconditions:
+  - description: "Задача существует"
+    check: "exists(.cm/tasks/{task_id})"
+    error_message: "Task {task_id} not found"
+
+execute:
+  - let: status_file = ".cm/tasks/{task_id}/status.yml"
+  
+  - "Read YAML file {status_file}"
+  - "Parse YAML content"
+  - "Extract 'status' field"
+  - return: status_value
+
+postconditions:
+  - description: "Возвращаемое значение не пусто"
+    check: "return_value is not null"
+
+examples:
+  - code: |
+      current_state = TASK.get_state("TASK-123")
+      # Returns: "designing"
+
+agent_notes: |
+  - Возвращает значение поля 'status' из status.yml
+  - Может быть null если задача только создана
+  - Ошибка если задачи не существует

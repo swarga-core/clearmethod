@@ -1,0 +1,114 @@
+# State: Process
+# Основная обработка - тестируем CML конструкции
+
+state:
+  status: process
+  title: "Process"
+  description: "Обработка - тестирование CML"
+
+preconditions:
+  - description: "Start завершен"
+    check: "TASK.get_property(task_id, 'start_complete') == true"
+
+execute:
+  # 1. Приветствие
+  - info: "⚙️  Processing state - testing CML constructs"
+  
+  # 2. Обновить stage
+  - TASK.set_property(task_id, "stage", "process")
+  
+  # 3. Тест условий (if/then/else)
+  - group: "Test conditional logic"
+    do:
+      - let: test_mode = true
+      
+      - if: test_mode == true
+        then:
+          - info: "✓ Test mode is ON (conditional works!)"
+          - TASK.set_property(task_id, "conditional_test", "passed")
+        else:
+          - error: "Test mode should be ON"
+      
+      - info: "Conditional test complete"
+  
+  # 4. Тест циклов (for)
+  - group: "Test for loop"
+    do:
+      - let: items = ["alpha", "beta", "gamma"]
+      - info: "Testing for loop with {length(items)} items"
+      
+      - for: item in items
+        do:
+          - info: "Processing item: {item}"
+          - TASK.log(task_id, "Processed: {item}")
+      
+      - info: "For loop test complete"
+  
+  # 5. Тест счетчика с while
+  - group: "Test while loop"
+    do:
+      - let: counter = 1
+      - let: max_count = 3
+      
+      - while: counter <= max_count
+        max_iterations: 5
+        do:
+          - info: "Counter: {counter}"
+          - TASK.log(task_id, "Counter at {counter}")
+          - let: counter = counter + 1
+      
+      - info: "While loop test complete (final counter: {counter})"
+  
+  # 6. Тест вложенных свойств
+  - group: "Test property operations"
+    do:
+      - TASK.set_property(task_id, "test_score", 100)
+      - let: score = TASK.get_property(task_id, "test_score")
+      - info: "Test score retrieved: {score}"
+      
+      - validate: score == 100
+        error: "Property get/set test failed"
+      
+      - info: "Property operations test complete"
+  
+  # 7. Проверка с пользователем (опционально)
+  - ask: "All tests passed. Continue to finish? (yes/no)"
+    into: user_confirmation
+    default: "yes"
+  
+  - if: user_confirmation == "yes"
+    then:
+      - TASK.set_property(task_id, "process_complete", true)
+      - TASK.log(task_id, "Process state: all tests passed")
+      - info: "✅ Ready to finish"
+    else:
+      - info: "User chose to stay in process state"
+      - return
+  
+  # 8. Финальное сообщение
+  - info: "✅ Process state complete"
+  - info: "Next state: 'finish' - wrap up"
+
+postconditions:
+  - description: "Свойство process_complete установлено"
+    check: "TASK.get_property(task_id, 'process_complete') == true"
+  
+  - description: "Conditional test пройден"
+    check: "TASK.get_property(task_id, 'conditional_test') == 'passed'"
+
+next_states:
+  - finish
+  - start  # Можно вернуться для повторного теста
+
+agent_notes: |
+  Здесь мы тестируем все основные CML конструкции:
+  - if/then/else
+  - for loops
+  - while loops
+  - group: для семантической группировки
+  - TASK.set_property / TASK.get_property
+  - TASK.log
+  - String interpolation
+  - Validate
+  - Ask пользователя
+

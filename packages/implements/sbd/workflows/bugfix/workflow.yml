@@ -1,0 +1,79 @@
+name: sbd.bugfix
+description: "Bug fix workflow - исправление ошибок и багов"
+version: "1.0.0"
+
+# Короткий workflow для исправления багов
+# Пропускаем analyzing/designing так как баг уже описан
+
+states:
+  - id: investigating
+    name: "Исследование"
+    description: "Исследование бага, понимание причины"
+    
+  - id: reproducing
+    name: "Воспроизведение"
+    description: "Воспроизведение бага, создание теста"
+    
+  - id: fixing
+    name: "Исправление"
+    description: "Исправление кода"
+    
+  - id: verifying
+    name: "Проверка"
+    description: "Проверка исправления, тестирование"
+    
+  - id: completing
+    name: "Завершение"
+    description: "Финализация, документация"
+
+# Граф переходов
+transitions:
+  - from: null
+    to: investigating
+    description: "Начало работы над багом"
+  
+  - from: investigating
+    to: reproducing
+    description: "Баг понят, переходим к воспроизведению"
+  
+  - from: reproducing
+    to: fixing
+    description: "Баг воспроизведен, начинаем исправление"
+  
+  - from: fixing
+    to: verifying
+    description: "Код исправлен, проверяем"
+  
+  - from: verifying
+    to: completing
+    description: "Исправление проверено, завершаем"
+    
+  - from: verifying
+    to: fixing
+    description: "Исправление не работает, возвращаемся"
+    condition: "Если тесты не прошли"
+  
+  - from: completing
+    to: null
+    description: "Баг исправлен"
+
+# Начальное состояние
+initial_state: investigating
+
+# Конечное состояние
+final_state: completing
+
+# Особенности bugfix workflow
+characteristics:
+  - "Быстрый цикл (5 стадий вместо 6)"
+  - "Фокус на воспроизведении и тестировании"
+  - "Возможность вернуться из verifying в fixing"
+  - "Обязательное создание теста"
+
+# Интеграция с событиями
+events:
+  on_start:
+    - package.registered
+  on_complete:
+    - task.workflow_completed
+

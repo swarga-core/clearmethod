@@ -1,0 +1,78 @@
+method:
+  name: create
+  concept: HELLO_TASK
+  implements: TASK.create
+  version: "0.1.0"
+  description: "Создает новую задачу как один YAML файл"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "Уникальный идентификатор задачи"
+    validation:
+      - pattern: "^[A-Z]+-[0-9]+$"
+        message: "ID должен быть в формате TASK-123"
+  
+  - name: title
+    type: string
+    required: true
+    description: "Название задачи"
+  
+  - name: content
+    type: text
+    required: false
+    description: "Описание задачи (для hello-world не используется)"
+    default: ""
+  
+  - name: creator
+    type: string
+    required: true
+    description: "Кто создает задачу"
+  
+  - name: workflow
+    type: string
+    required: true
+    description: "ID workflow (например, hello-world.simple)"
+
+preconditions:
+  - validate: not exists(".cm/tasks/{task_id}.yml")
+    error: "Задача {task_id} уже существует"
+
+execute:
+  - let: tasks_root = ".cm/tasks"
+  - let: task_file = "{tasks_root}/{task_id}.yml"
+  - let: current_time = current_datetime()
+
+  - info: "Creating task {task_id} as single YAML file"
+
+  # Создать структуру данных задачи
+  - let: task_data = |
+      id: {task_id}
+      title: "{title}"
+      workflow: {workflow}
+      status: null
+      created_at: {current_time}
+      created_by: {creator}
+      last_updated_at: {current_time}
+      last_updater: {creator}
+      properties: {{}}
+      log:
+        - "[{current_time}] Task created by {creator}"
+
+  # Записать файл
+  - write: "{task_data}"
+    to: "{task_file}"
+  
+  - validate: exists("{task_file}")
+    error: "Не удалось создать файл задачи {task_file}"
+
+  - info: "✅ Task {task_id} created at {task_file}"
+
+postconditions:
+  - validate: exists("{task_file}")
+    error: "Файл задачи не создан"
+
+on_error:
+  - error: "Ошибка при создании задачи {task_id}. Возможно, потребуется ручная очистка: rm {task_file}"
+

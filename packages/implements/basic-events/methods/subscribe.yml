@@ -1,0 +1,95 @@
+name: subscribe
+description: |
+  Register a handler to be triggered when specific event type is emitted.
+  
+  Handler will receive:
+  - event: Full event object (id, type, timestamp, payload)
+  - payload: Event payload data
+  - task_id: Task ID if event is task-related
+
+params:
+  - name: event_type
+    type: string
+    required: true
+  
+  - name: extension
+    type: string
+    required: true
+  
+  - name: handler
+    type: string
+    required: true
+  
+  - name: filter
+    type: object
+    required: false
+  
+  - name: priority
+    type: number
+    required: false
+    default: 100
+  
+  - name: enabled
+    type: boolean
+    required: false
+    default: true
+
+instructions:
+  - group: "Validate parameters"
+    do:
+      - if: !event_type || !extension || !handler
+        then:
+          - error: "event_type, extension, and handler are required"
+      
+      - info: "EVENT: Registering subscription for {event_type} → {extension}.{handler}"
+  
+  - group: "Create subscription"
+    do:
+      - let: subscription_id = generate_id("sub")
+      - let: timestamp = now()
+      
+      - let: subscription = {
+          id: subscription_id,
+          event_type: event_type,
+          extension: extension,
+          handler: handler,
+          filter: filter || {},
+          priority: priority || 100,
+          enabled: enabled != false,
+          created_at: timestamp
+        }
+  
+  - group: "Save subscription"
+    do:
+      - let: subscriptions_file = ".cm/events/subscriptions.yml"
+      
+      # Read existing subscriptions
+      - read: subscriptions_file
+        into: subscriptions
+        default: []
+      
+      # Check for duplicates
+      - let: duplicate_found = false
+      - for: sub in subscriptions
+        do:
+          - if: sub.event_type == event_type && sub.extension == extension && sub.handler == handler
+            then:
+              - warn: "EVENT: Subscription already exists (ID: {sub.id}), returning existing ID"
+              - let: duplicate_found = true
+              - let: subscription_id = sub.id
+              - break
+      
+      # Add new subscription if no duplicate
+      - if: !duplicate_found
+        then:
+          - let: subscriptions = subscriptions.append(subscription)
+          
+          - write: subscriptions_file
+            content: yaml(subscriptions)
+          
+          - info: "EVENT: Subscription {subscription_id} created"
+  
+  - group: "Return subscription ID"
+    do:
+      - return: subscription_id
+

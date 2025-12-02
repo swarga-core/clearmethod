@@ -1,0 +1,65 @@
+method: get_log
+description: "Get commit history"
+
+params:
+  - name: limit
+    type: number
+    required: false
+    default: 10
+  - name: branch
+    type: string
+    required: false
+
+returns:
+  type: array
+
+instructions:
+  group: "Determine branch"
+  do:
+    - if: branch
+      then:
+        - let: target = branch
+      else:
+        - terminal: "git branch --show-current"
+          into: target
+        
+        - let: target = target.trim()
+  
+  group: "Get log"
+  do:
+    - let: format = "--pretty=format:%H|%an|%ae|%ad|%s"
+    - let: cmd = "git log {target} {format} --date=iso -n {limit}"
+    
+    - terminal: cmd
+      into: log_output
+    
+    - if: log_output.trim().length == 0
+      then:
+        - return: []
+  
+  group: "Parse commits"
+  do:
+    - let: commits = []
+    
+    - for: line in log_output.split("\n")
+      do:
+        - if: line.trim().length == 0
+          then:
+            - continue
+        
+        - let: parts = line.split("|")
+        
+        - let: commit = {
+            hash: parts[0],
+            author: parts[1],
+            author_email: parts[2],
+            date: parts[3],
+            message: parts[4]
+          }
+        
+        - let: commits.push(commit)
+    
+    - info: "Retrieved {commits.length} commit(s) from '{target}'"
+  
+  - return: commits
+

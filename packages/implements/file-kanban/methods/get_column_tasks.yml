@@ -1,0 +1,56 @@
+method: get_column_tasks
+description: "Get all tasks in specific column"
+
+params:
+  - name: column_name
+    type: string
+    required: true
+
+returns:
+  type: array
+
+instructions:
+  group: "Get board state"
+  do:
+    - KANBAN.get_board_state()
+      into: board_state
+    
+    - let: target_column = null
+    
+    - for: col in board_state.columns
+      do:
+        - if: col.name == column_name
+          then:
+            - let: target_column = col
+            - break
+    
+    - if: !target_column
+      then:
+        - error: "Column '{column_name}' not found"
+  
+  group: "Get task details"
+  do:
+    - let: tasks = []
+    
+    - for: task_id in target_column.tasks
+      do:
+        - TASK.get_state(task_id)
+          into: task_state
+        
+        - TASK.get_property(task_id, "title")
+          into: task_title
+        
+        - TASK.get_property(task_id, "priority")
+          into: priority
+        
+        - let: tasks.push({
+            id: task_id,
+            title: task_title,
+            state: task_state,
+            properties: {
+              priority: priority
+            }
+          })
+  
+  - return: tasks
+

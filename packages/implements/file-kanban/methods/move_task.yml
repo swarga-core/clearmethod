@@ -1,0 +1,132 @@
+method: move_task
+description: "Move task to a different column"
+
+params:
+  - name: task_id
+    type: string
+    required: true
+  - name: to_column
+    type: string
+    required: true
+  - name: update_state
+    type: boolean
+    required: false
+    default: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Validate inputs"
+  do:
+    - if: !task_id
+      then:
+        - error: "task_id is required"
+    
+    - if: !to_column
+      then:
+        - error: "to_column is required"
+  
+  group: "Get current column"
+  do:
+    - TASK.get_property(task_id, "kanban_column")
+      into: from_column
+    
+    - if: !from_column
+      then:
+        # Infer from state
+        - TASK.get_state(task_id)
+          into: task_state
+        
+        - read: ".cm/project.yml"
+          format: yaml
+          into: config
+        
+        - let: columns = config.packages?.file_kanban?.columns || []
+        
+        - for: col in columns
+          do:
+            - if: col.states.includes(task_state)
+              then:
+                - let: from_column = col.name
+                - break
+  
+  group: "Verify target column exists"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: columns = config.packages?.file_kanban?.columns || []
+    - let: target_col = null
+    
+    - for: col in columns
+      do:
+        - if: col.name == to_column
+          then:
+            - let: target_col = col
+            - break
+    
+    - if: !target_col
+      then:
+        - error: "Column '{to_column}' not found in configuration"
+  
+  group: "Move task"
+  do:
+    - TASK.set_property(task_id, "kanban_column", to_column)
+    
+    - info: "Moved task {task_id}: {from_column || 'unknown'} → {to_column}"
+    
+    - let: result = {
+        task_id: task_id,
+        from_column: from_column,
+        to_column: to_column,
+        state_updated: false
+      }
+  
+  group: "Update workflow state if requested"
+  do:
+    - if: update_state && target_col.states.length > 0
+      then:
+        - let: new_state = target_col.states[0]  # Use first state in column
+        
+        - TASK.get_state(task_id)
+          into: current_state
+        
+        - if: current_state != new_state
+          then:
+            - TASK.set_state(task_id, new_state)
+            
+            - let: result.state_updated = true
+            - let: result.from_state = current_state
+            - let: result.to_state = new_state
+            
+            - info: "Updated task state: {current_state} → {new_state}"
+  
+  group: "Log operation"
+  do:
+    - TASK.log(task_id, "Moved to column: {to_column}")
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("kanban.task_moved", {
+        task_id: task_id,
+        from_column: from_column || "unknown",
+        to_column: to_column,
+        from_state: result.from_state,
+        to_state: result.to_state,
+        timestamp: now()
+      })
+  
+  group: "Update board"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - if: config.packages?.file_kanban?.auto_update
+      then:
+        - KANBAN.update_board(false)
+  
+  - return: result
+

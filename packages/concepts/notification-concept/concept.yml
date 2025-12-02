@@ -1,0 +1,114 @@
+name: NOTIFICATION
+description: |
+  Abstract notification concept for multi-channel messaging.
+  Allows workflows to send notifications via Slack, email, console, etc.
+  
+  Implementations must provide:
+  - Message sending
+  - Channel configuration
+  - Delivery tracking
+  - Template support
+
+type: abstract
+
+methods:
+  send:
+    description: |
+      Send notification message.
+    params:
+      - name: message
+        type: string
+        required: true
+        description: Notification message
+      
+      - name: channel
+        type: string
+        required: false
+        description: Target channel (e.g., "#general", "user@example.com")
+      
+      - name: level
+        type: string
+        required: false
+        default: "info"
+        description: Message level (info, warning, error, success)
+      
+      - name: metadata
+        type: object
+        required: false
+        description: Additional metadata for notification
+    
+    returns:
+      type: object
+      description: |
+        {
+          notification_id: string,
+          delivered: boolean,
+          timestamp: string
+        }
+  
+  send_template:
+    description: |
+      Send notification using template.
+    params:
+      - name: template
+        type: string
+        required: true
+        description: Template name
+      
+      - name: variables
+        type: object
+        required: true
+        description: Template variables
+      
+      - name: channel
+        type: string
+        required: false
+        description: Target channel
+    
+    returns:
+      type: object
+      description: Notification result
+  
+  get_delivery_status:
+    description: |
+      Check notification delivery status.
+    params:
+      - name: notification_id
+        type: string
+        required: true
+        description: Notification ID
+    
+    returns:
+      type: object
+      description: |
+        {
+          id: string,
+          status: "pending" | "delivered" | "failed",
+          timestamp: string,
+          error: string?
+        }
+
+standard_events:
+  - event_type: notification.sent
+    description: Emitted when notification is sent
+    payload:
+      notification_id: string
+      channel: string
+      level: string
+      timestamp: string
+  
+  - event_type: notification.failed
+    description: Emitted when notification fails
+    payload:
+      notification_id: string
+      error: string
+      timestamp: string
+
+notes: |
+  NOTIFICATION implementations should:
+  - Support multiple channels
+  - Handle delivery failures gracefully
+  - Provide message templates
+  - Track delivery status
+  - Support rich formatting (markdown, etc.)
+

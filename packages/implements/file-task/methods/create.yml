@@ -1,0 +1,138 @@
+# TASK.create - Создание новой задачи
+# Самый важный метод - создает всю структуру задачи
+
+method:
+  name: create
+  concept: TASK
+  implements: TASK.create
+  version: "0.1.0"
+  description: "Создает новую задачу в файловой системе"
+
+# Параметры
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "Уникальный идентификатор задачи (например, TASK-123)"
+    validation:
+      - pattern: "^[A-Z]+-[0-9]+$"
+        message: "ID должен быть в формате TASK-123"
+  
+  - name: title
+    type: string
+    required: true
+    description: "Название задачи"
+  
+  - name: content
+    type: text
+    required: false
+    description: "Описание/спецификация задачи"
+    default: ""
+  
+  - name: creator
+    type: string
+    required: true
+    description: "Кто создает задачу"
+  
+  - name: workflow
+    type: string
+    required: true
+    description: "ID workflow (например, psd.feature)"
+
+# Предусловия
+preconditions:
+  - description: "Задачи с таким ID еще не существует"
+    check: "NOT exists({tasks_root}/{task_id})"
+    error_message: "Задача {task_id} уже существует"
+
+# Выполнение
+execute:
+  # 1. Определить переменные
+  - let: tasks_root = ".cm/tasks"
+  - let: task_folder = "{tasks_root}/{task_id}"
+  - let: current_time = current_datetime()
+  
+  # 2. Создать папку задачи
+  - "Create folder {task_folder}"
+  - "If folder creation failed, abort with error"
+  
+  # 3. Создать status.yml
+  - let: status_content = |
+      id: {task_id}
+      title: "{title}"
+      workflow: {workflow}
+      status: null
+      created_at: {current_time}
+      created_by: {creator}
+      last_updated_at: {current_time}
+      last_updater: {creator}
+  
+  - "Write {status_content} to {task_folder}/status.yml"
+  
+  # 4. Создать specs.md
+  - if: content is not empty
+    then:
+      - "Write {content} to {task_folder}/specs.md"
+    else:
+      - "Create empty file {task_folder}/specs.md"
+  
+  # 5. Создать log.md с первой записью
+  - let: log_entry = "[{current_time}] Task created by {creator}"
+  - "Write {log_entry} to {task_folder}/log.md"
+  
+  # 6. Финальное сообщение
+  - info: "Task {task_id} created at {task_folder}"
+
+# Постусловия
+postconditions:
+  - description: "Папка задачи создана"
+    check: "exists({task_folder})"
+  
+  - description: "Файл status.yml существует"
+    check: "exists({task_folder}/status.yml)"
+  
+  - description: "Файл specs.md существует"
+    check: "exists({task_folder}/specs.md)"
+  
+  - description: "Файл log.md существует"
+    check: "exists({task_folder}/log.md)"
+
+# Обработка ошибок
+on_error:
+  - error: "Log error to console"
+  - "If partial creation, suggest manual cleanup: rm -rf {task_folder}"
+  - error: "Failed to create task {task_id}"
+
+# Примеры использования
+examples:
+  - description: "Создание задачи с контентом"
+    code: |
+      TASK.create(
+        "TASK-123",
+        "Add notification system",
+        "Implement push notifications...",
+        "andrey",
+        "sbd.feature"
+      )
+  
+  - description: "Создание задачи без контента"
+    code: |
+      TASK.create(
+        "TASK-124",
+        "Fix login bug",
+        "",
+        "andrey",
+        "sbd.bugfix"
+      )
+
+# Примечания для агента
+agent_notes: |
+  Важные детали выполнения:
+  
+  1. Всегда используй ISO8601 для current_datetime()
+  2. Создавай папку сначала - без нее ничего не работает
+  3. Проверяй успешность каждого шага
+  4. При ошибке предлагай cleanup (удаление созданных файлов)
+  5. Все три файла (status.yml, specs.md, log.md) ОБЯЗАТЕЛЬНЫ
+  6. В status.yml поле status=null до WORKFLOW.start()
+

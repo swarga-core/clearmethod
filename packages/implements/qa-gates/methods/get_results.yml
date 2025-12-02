@@ -1,0 +1,65 @@
+method: get_results
+description: "Get historical results for quality gate checks"
+
+params:
+  - name: task_id
+    type: string
+    required: true
+  - name: gate_name
+    type: string
+    required: false
+  - name: limit
+    type: number
+    required: false
+    default: 10
+
+returns:
+  type: array
+
+instructions:
+  group: "Get task log"
+  do:
+    - TASK.get_log(task_id)
+      into: task_log
+  
+  group: "Parse QA gate results from log"
+  do:
+    - let: lines = task_log.split("\n")
+    - let: results = []
+    
+    # Parse log entries for QA gate results
+    # Format: "QA Gate 'gate_name': PASSED/FAILED (x/y)"
+    
+    - for: line in lines
+      do:
+        - if: line.includes("QA Gate")
+          then:
+            # Extract gate name, status, and counts
+            - let: gate_match = line.match(/QA Gate '([^']+)': (PASSED|FAILED) \((\d+)\/(\d+)\)/)
+            
+            - if: gate_match
+              then:
+                - let: log_gate_name = gate_match[1]
+                - let: status = gate_match[2]
+                - let: checks_passed = parseInt(gate_match[3])
+                - let: checks_total = parseInt(gate_match[4])
+                
+                # Filter by gate_name if specified
+                - if: !gate_name || log_gate_name == gate_name
+                  then:
+                    - let: results.push({
+                        gate_name: log_gate_name,
+                        passed: status == "PASSED",
+                        checks_passed: checks_passed,
+                        checks_total: checks_total,
+                        timestamp: "unknown"  # Could extract from log timestamp if available
+                      })
+  
+  group: "Limit results"
+  do:
+    - if: results.length > limit
+      then:
+        - let: results = results.slice(0, limit)
+  
+  - return: results
+

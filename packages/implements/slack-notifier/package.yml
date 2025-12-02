@@ -1,0 +1,80 @@
+id: slack-notifier
+name: "Slack Notifier"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Slack integration for ClearMethod notifications.
+  Sends workflow updates, alerts, and notifications to Slack channels.
+
+depends_on:
+  - core-concept           # TASK, WORKFLOW, EVENT
+  - notification-concept   # NOTIFICATION abstract
+  - basic-events          # For event handling
+
+provides:
+  concepts:
+    - SLACK_NOTIFIER (implements: NOTIFICATION)
+  
+  methods:
+    - NOTIFICATION.send
+    - NOTIFICATION.send_template
+    - NOTIFICATION.get_delivery_status
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+
+config_template:
+  slack_notifier:
+    enabled: true
+    
+    # Slack configuration
+    webhook_url: "https://hooks.slack.com/services/..."
+    default_channel: "#dev-notifications"
+    bot_name: "ClearMethod Bot"
+    icon_emoji: ":robot_face:"
+    
+    # Notification types
+    notifications:
+      workflow_started:
+        enabled: true
+        channel: "#dev"
+        template: "workflow_started"
+      
+      workflow_completed:
+        enabled: true
+        channel: "#dev"
+        template: "workflow_completed"
+      
+      quality_gate_failed:
+        enabled: true
+        channel: "#alerts"
+        level: "error"
+        template: "qa_failed"
+      
+      code_review_issues:
+        enabled: true
+        channel: "#code-review"
+        level: "warning"
+    
+    # Message templates
+    templates:
+      workflow_started: |
+        🚀 *Workflow Started*
+        Task: {task_id} - {task_title}
+        Workflow: {workflow}
+        User: {creator}
+      
+      workflow_completed: |
+        ✅ *Workflow Completed*
+        Task: {task_id} - {task_title}
+        Duration: {duration}
+        
+      qa_failed: |
+        ⚠️ *Quality Gate Failed*
+        Task: {task_id}
+        Gate: {gate}
+        Issues: {issue_count}
+        Details: {issues}
+

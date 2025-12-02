@@ -1,0 +1,119 @@
+# State: Verifying
+# Проверка и тестирование
+
+state:
+  status: verifying
+  title: "Verifying"
+  description: "Тщательная проверка реализации и тестирование"
+
+# Предусловия
+preconditions:
+  - description: "Реализация завершена"
+    check: "TASK.get_property(task_id, 'implementation_complete') == true"
+    error_message: "Cannot verify without completed implementation"
+
+# Выполнение
+execute:
+  # 1. Приветствие
+  - |
+    Inform user: "Starting 'Verifying' phase.
+    Goal: Thoroughly test and verify the implementation."
+
+  # 2. Проверка соответствия спецификации
+  - "Read specs.md from task folder"
+  - group: "Verify against specifications"
+    do:
+      - "Check each requirement is met"
+      - "Verify all acceptance criteria"
+      - "Test that constraints are respected"
+
+  # 3. Функциональное тестирование
+  - group: "Test functionality"
+    do:
+      - "Test main use cases"
+      - "Test edge cases"
+      - "Test error handling"
+      - "Test integration points"
+
+  # 4. Code quality проверки
+  - group: "Verify code quality"
+    do:
+      - "Run linters if available"
+      - "Check for obvious issues"
+      - "Review code structure"
+      - "Verify best practices are followed"
+
+  # 5. Документация
+  - group: "Check documentation"
+    do:
+      - "Verify code comments where needed"
+      - "Check README updates if needed"
+      - "Verify API documentation if applicable"
+
+  # 6. Тестирование с пользователем
+  - "Ask user to review and test"
+  - "Guide user through testing if needed"
+  - "Gather feedback"
+
+  # 7. Обработка найденных проблем
+  - if: issues_found
+    then:
+      - "Document issues in test-results.md"
+      - "Ask user: 'Do you want to fix now or return to implementing?'"
+      - if: user_wants_fix_now
+        then:
+          - "Fix issues"
+          - "Return to step 3 (re-test)"
+        else:
+          - TASK.set_property(task_id, "verification_passed", false)
+          - TASK.log(task_id, "Verification found issues, returning to implementing")
+          - "Inform user to use /cm-goback when ready"
+          - return # Не проходим дальше
+
+    else:
+      - TASK.set_property(task_id, "verification_passed", true)
+
+  # 8. Создать test-results.md
+  - group: "Create comprehensive test results document"
+    do:
+      - "Document all tested scenarios"
+      - "Record test results"
+      - "List known issues if any"
+      - "Include quality metrics"
+      - "Add user feedback"
+      - "Write test-results.md to task folder"
+
+  # 9. Логирование
+  - TASK.log(task_id, "Verification passed successfully")
+
+  # 10. Сообщить пользователю
+  - |
+    Inform user: "Verification complete! All tests passed.
+    Next phase: 'Completing' - finalize and wrap up."
+
+# Постусловия
+postconditions:
+  - description: "Файл test-results.md создан"
+    check: "file_exists(.cm/tasks/{task_id}/test-results.md)"
+    error_message: "test-results.md must be created"
+
+  - description: "Верификация пройдена"
+    check: "TASK.get_property(task_id, 'verification_passed') == true"
+    error_message: "Verification must pass before completing"
+
+# Возможные следующие состояния
+next_states:
+  - completing # Основной путь
+  - implementing # Возврат для исправлений
+
+# Примечания для агента
+agent_notes: |
+  Критический этап проверки качества!
+
+  1. **Тщательность**: Проверь ВСЁ, не торопись
+  2. **Честность**: Если нашел проблемы - сообщи
+  3. **Пользователь**: Обязательно привлекай пользователя к тестированию
+  4. **Документируй**: Все результаты в test-results.md
+  5. **Не стесняйся**: Если нужны правки - возвращайся в implementing
+
+  Лучше потратить время на верификацию сейчас, чем находить баги потом.

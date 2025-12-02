@@ -1,0 +1,88 @@
+# State: Finish
+# Завершение - подведение итогов
+
+state:
+  status: finish
+  title: "Finish"
+  description: "Финальное состояние - подведение итогов тестов"
+
+preconditions:
+  - description: "Process завершен"
+    check: "TASK.get_property(task_id, 'process_complete') == true"
+
+execute:
+  # 1. Приветствие
+  - info: "🏁 Finish state - wrapping up"
+  
+  # 2. Обновить stage
+  - TASK.set_property(task_id, "stage", "finish")
+  
+  # 3. Собрать статистику
+  - group: "Collect test results"
+    do:
+      - let: start_done = TASK.get_property(task_id, "start_complete")
+      - let: process_done = TASK.get_property(task_id, "process_complete")
+      - let: conditional_test = TASK.get_property(task_id, "conditional_test")
+      
+      - info: "Test Results:"
+      - info: "- Start complete: {start_done}"
+      - info: "- Process complete: {process_done}"
+      - info: "- Conditional test: {conditional_test}"
+  
+  # 4. Проверить лог
+  - group: "Verify logging"
+    do:
+      - let: task_log = TASK.get_log(task_id)
+      - let: log_entries = length(task_log)
+      - info: "Total log entries: {log_entries}"
+      
+      - validate: log_entries > 0
+        error: "Log should contain entries"
+  
+  # 5. Финальный лог
+  - TASK.log(task_id, "Finish state: test workflow completed successfully")
+  
+  # 6. Установить флаг завершения
+  - TASK.set_property(task_id, "workflow_complete", true)
+  - TASK.set_property(task_id, "final_status", "success")
+  
+  # 7. Поздравление
+  - info: "🎉 Test workflow completed successfully!"
+  - info: "Task {task_id} finished"
+  - info: ""
+  - info: "All ClearMethod mechanics tested:"
+  - info: "  ✓ Variables (let:)"
+  - info: "  ✓ Conditionals (if/then/else)"
+  - info: "  ✓ Loops (for, while)"
+  - info: "  ✓ Groups (group: + do:)"
+  - info: "  ✓ Concept methods (TASK.*)"
+  - info: "  ✓ Properties (get/set)"
+  - info: "  ✓ Logging"
+  - info: "  ✓ String interpolation"
+  - info: "  ✓ Validation"
+  - info: "  ✓ User interaction (ask)"
+  - info: ""
+  - info: "Check task file: .cm/tasks/{task_id}.yml"
+
+postconditions:
+  - description: "Workflow завершен"
+    check: "TASK.get_property(task_id, 'workflow_complete') == true"
+  
+  - description: "Финальный статус установлен"
+    check: "TASK.get_property(task_id, 'final_status') == 'success'"
+
+next_states: []  # Финальное состояние
+
+agent_notes: |
+  Финальное состояние тестового workflow.
+  
+  Здесь мы:
+  - Собираем результаты всех тестов
+  - Проверяем лог
+  - Подводим итоги
+  - Отмечаем задачу как завершенную
+  
+  После этого состояния workflow считается завершенным.
+  Можно изучить файл .cm/tasks/{task_id}.yml чтобы увидеть
+  все изменения, которые были сделаны в ходе workflow.
+

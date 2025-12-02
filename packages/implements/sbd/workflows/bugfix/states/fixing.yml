@@ -1,0 +1,59 @@
+name: fixing
+description: "Исправление бага в коде"
+
+preconditions:
+  - TASK.get_property(task_id, "reproduction_complete") == true
+
+instructions:
+  - group: "Инициализация стадии"
+    do:
+      - EVENT.emit("task.stage_started", {task_id: task_id, stage: "fixing"})
+      - TASK.set_property(task_id, "stage", "fixing")
+      - TASK.log(task_id, "🔧 Started fixing the bug")
+  
+  - group: "Исправление кода"
+    do:
+      - info: "Implement the fix for the bug"
+      - let: affected_files = TASK.get_property(task_id, "affected_files")
+      - info: "Files to modify: {affected_files}"
+      
+      - ask: "Describe the fix approach:"
+        into: fix_approach
+      
+      - TASK.set_property(task_id, "fix_approach", fix_approach)
+      - TASK.log(task_id, "Fix approach: {fix_approach}")
+      
+      - info: "Implement the changes in the codebase"
+      - ask: "Files modified?"
+        into: files_modified
+      
+      - TASK.set_property(task_id, "files_modified", files_modified)
+      - TASK.log(task_id, "Modified files: {files_modified}")
+  
+  - group: "Проверка теста"
+    do:
+      - info: "Run the previously failing test"
+      - let: test_file = TASK.get_property(task_id, "test_file")
+      - info: "Test: {test_file}"
+      
+      - ask: "Does the test pass now? (yes/no)"
+        into: test_passes
+      
+      - TASK.set_property(task_id, "test_passes", test_passes)
+      
+      - if: test_passes == "yes"
+        then:
+          - TASK.log(task_id, "✅ Test passes - fix appears to work")
+        else:
+          - TASK.log(task_id, "⚠️ Test still fails - may need iteration")
+  
+  - group: "Завершение стадии"
+    do:
+      - TASK.set_property(task_id, "fix_complete", true)
+      - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "fixing"})
+      - info: "✅ Fix implemented. Moving to verification."
+
+postconditions:
+  - TASK.get_property(task_id, "fix_complete") == true
+  - TASK.get_property(task_id, "files_modified") != null
+

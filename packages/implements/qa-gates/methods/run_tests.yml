@@ -1,0 +1,142 @@
+method: run_tests
+description: "Run test suite and return results"
+
+params:
+  - name: test_pattern
+    type: string
+    required: false
+  - name: coverage
+    type: boolean
+    required: false
+    default: true
+
+returns:
+  type: object
+
+instructions:
+  group: "Load test configuration"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: test_config = config.packages?.qa_gates?.tests
+    
+    - if: !test_config
+      then:
+        - error: "Tests not configured in project.yml"
+    
+    - let: command = coverage ? test_config.coverage_command : test_config.command
+  
+  group: "Build test command"
+  do:
+    - let: cmd = command
+    
+    - if: test_pattern
+      then:
+        - let: cmd = cmd + " " + test_pattern
+    
+    - info: "Running tests: {cmd}"
+  
+  group: "Execute tests"
+  do:
+    - terminal: cmd
+      into: test_output
+      allow_failure: true
+    
+    # Parse test output (format depends on test runner)
+    # This is a simplified parser - real implementation needs runner-specific parsing
+    
+    - let: lines = test_output.split("\n")
+    - let: total = 0
+    - let: passed = 0
+    - let: failed = 0
+    - let: skipped = 0
+    - let: coverage_lines = 0
+    - let: failed_tests = []
+    
+    # Simple parsing for common test runner formats (Jest, pytest, etc.)
+    - for: line in lines
+      do:
+        # Jest format: "Tests: 5 passed, 5 total"
+        - if: line.includes("Tests:") && line.includes("passed")
+          then:
+            - let: parts = line.split(",")
+            - let: passed = parseInt(parts[0].match(/\d+/)?.[0] || "0")
+            - let: total = parseInt(parts[parts.length - 1].match(/\d+/)?.[0] || "0")
+            - let: failed = total - passed
+        
+        # Coverage: "Lines: 85.5%"
+        - if: line.includes("Lines:") && line.includes("%")
+          then:
+            - let: coverage_lines = parseFloat(line.match(/[\d.]+/)?.[0] || "0")
+        
+        # Failed test
+        - if: line.includes("FAIL") || line.includes("FAILED")
+          then:
+            - let: failed_tests.push({
+                name: line.trim(),
+                file: "",
+                error: ""
+              })
+  
+  group: "Calculate duration"
+  do:
+    # Try to extract duration from output
+    - let: duration_ms = 0
+    
+    - for: line in lines
+      do:
+        - if: line.includes("Time:") || line.includes("Duration:")
+          then:
+            - let: time_match = line.match(/[\d.]+\s*(ms|s)/)
+            - if: time_match
+              then:
+                - let: value = parseFloat(time_match[0])
+                - let: unit = time_match[1]
+                - let: duration_ms = unit == "s" ? value * 1000 : value
+  
+  group: "Build result"
+  do:
+    - let: result = {
+        total: total,
+        passed: passed,
+        failed: failed,
+        skipped: skipped,
+        duration_ms: duration_ms,
+        coverage: coverage ? {
+          lines: coverage_lines,
+          statements: 0,
+          functions: 0,
+          branches: 0
+        } : null,
+        failed_tests: failed_tests,
+        raw_output: test_output
+      }
+    
+    - if: failed > 0
+      then:
+        - warn: "Tests failed: {failed}/{total}"
+      else:
+        - info: "✅ All tests passed ({passed}/{total})"
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("quality.tests_completed", {
+        total: total,
+        passed: passed,
+        failed: failed,
+        coverage: coverage_lines,
+        timestamp: now()
+      })
+    
+    - if: coverage && coverage_lines < config.packages?.qa_gates?.defaults?.min_coverage
+      then:
+        - EVENT.emit("quality.coverage_low", {
+            coverage: coverage_lines,
+            threshold: config.packages?.qa_gates?.defaults?.min_coverage,
+            timestamp: now()
+          })
+  
+  - return: result
+

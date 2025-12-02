@@ -1,0 +1,51 @@
+handler: on_workflow_completed
+description: "Update board when workflow completes"
+
+subscribes_to: task.workflow_completed
+
+filter:
+  config.packages.file_kanban.enabled: true
+  config.packages.file_kanban.auto_update: true
+
+priority: 30
+
+instructions:
+  - let: task_id = event.payload.task_id
+  - let: workflow = event.payload.workflow
+  
+  - info: "Workflow '{workflow}' completed for task {task_id}, updating board"
+  
+  # Move to Done column
+  - read: ".cm/project.yml"
+    format: yaml
+    into: config
+  
+  - let: columns = config.packages?.file_kanban?.columns || []
+  - let: done_column = null
+  
+  # Find Done column (last column or one with "completing" state)
+  - for: col in columns
+    do:
+      - if: col.states.includes("completing") || col.name.includes("Done")
+        then:
+          - let: done_column = col.name
+          - break
+  
+  - if: !done_column && columns.length > 0
+    then:
+      # Default to last column
+      - let: done_column = columns[columns.length - 1].name
+  
+  # Move task
+  - if: done_column
+    then:
+      - TASK.set_property(task_id, "kanban_column", done_column)
+      - info: "Moved completed task {task_id} to: {done_column}"
+  
+  # Update board
+  - KANBAN.update_board(false)
+
+notes: |
+  This handler ensures completed tasks appear in the Done column.
+  Typically the last column or column containing "completing" state.
+

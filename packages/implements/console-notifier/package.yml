@@ -1,0 +1,50 @@
+id: console-notifier
+name: "Console Notifier"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Console/log-based notification implementation.
+  Outputs notifications to console and log files.
+  Useful for development and CI/CD environments.
+
+depends_on:
+  - core-concept           # TASK, WORKFLOW, EVENT
+  - notification-concept   # NOTIFICATION abstract
+  - basic-events          # For event handling
+
+provides:
+  concepts:
+    - CONSOLE_NOTIFIER (implements: NOTIFICATION)
+  
+  methods:
+    - NOTIFICATION.send
+    - NOTIFICATION.send_template
+    - NOTIFICATION.get_delivery_status
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+
+config_template:
+  console_notifier:
+    enabled: true
+    
+    # Output targets
+    outputs:
+      console: true
+      file: true
+      file_path: ".cm/logs/notifications.log"
+    
+    # Formatting
+    format:
+      colors: true
+      timestamps: true
+      emoji: true
+      level_prefix: true
+    
+    # Filtering
+    filter:
+      min_level: "info"  # debug, info, warning, error
+      categories: []  # Empty = all categories
+

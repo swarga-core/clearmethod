@@ -1,0 +1,196 @@
+name: emit
+description: |
+  Emit an event and trigger all subscribed handlers.
+  
+  Process:
+  1. Create event record with unique ID
+  2. Save to event log
+  3. Find matching subscriptions
+  4. Execute handlers in priority order
+  5. Update event record with execution results
+
+params:
+  - name: event_type
+    type: string
+    required: true
+  
+  - name: payload
+    type: object
+    required: true
+  
+  - name: sync
+    type: boolean
+    required: false
+    default: true
+
+instructions:
+  - group: "Initialize event"
+    do:
+      - let: event_id = generate_id("evt")
+      - let: timestamp = now()
+      - let: cascade_depth = payload.cascade_depth || 0
+      
+      - if: cascade_depth > 10
+        then:
+          - error: "Maximum cascade depth exceeded (10). Possible infinite loop in event handlers."
+      
+      - info: "EVENT: Emitting {event_type} (ID: {event_id})"
+  
+  - group: "Create event record"
+    do:
+      - let: event = {
+          id: event_id,
+          type: event_type,
+          timestamp: timestamp,
+          payload: payload,
+          cascade_depth: cascade_depth,
+          handlers_executed: [],
+          duration_ms: 0,
+          status: "processing"
+        }
+      
+      # Save to event log
+      - let: events_file = ".cm/events/events.yml"
+      - read: events_file
+        into: events
+        default: []
+      
+      - let: events = events.append(event)
+      
+      - write: events_file
+        content: yaml(events)
+      
+      - info: "EVENT: Event {event_id} recorded"
+  
+  - group: "Find matching subscriptions"
+    do:
+      - let: subscriptions_file = ".cm/events/subscriptions.yml"
+      - read: subscriptions_file
+        into: all_subscriptions
+        default: []
+      
+      # Filter by event type and enabled status
+      - let: matching = []
+      - for: sub in all_subscriptions
+        do:
+          - if: sub.enabled == true && event_type_matches(sub.event_type, event_type)
+            then:
+              # Apply filters if present
+              - if: sub.filter
+                then:
+                  - if: filter_matches(sub.filter, payload)
+                    then:
+                      - let: matching = matching.append(sub)
+                else:
+                  - let: matching = matching.append(sub)
+      
+      - info: "EVENT: Found {matching.length} matching subscriptions"
+      
+      # Sort by priority (lower = higher priority)
+      - let: sorted = sort(matching, by: "priority", order: "asc")
+  
+  - group: "Execute handlers"
+    do:
+      - let: start_time = now_ms()
+      - let: handlers_executed = []
+      
+      - for: sub in sorted
+        do:
+          - info: "EVENT: Executing {sub.extension}.{sub.handler} (priority: {sub.priority})"
+          
+          - let: handler_start = now_ms()
+          - let: handler_result = {
+              subscription_id: sub.id,
+              extension: sub.extension,
+              handler: sub.handler,
+              status: "unknown",
+              duration_ms: 0,
+              error: null
+            }
+          
+          # Try to execute handler
+          - try:
+              # Build handler path
+              - let: handler_path = ".cm/extensions/{sub.extension}/{sub.handler}.yml"
+              
+              # Check if handler exists
+              - if: file_exists(handler_path)
+                then:
+                  # Execute handler CML
+                  - let: handler_context = {
+                      event: event,
+                      payload: payload,
+                      task_id: payload.task_id
+                    }
+                  
+                  # Increment cascade depth for nested events
+                  - let: nested_payload = merge(payload, {cascade_depth: cascade_depth + 1})
+                  - let: handler_context = merge(handler_context, {payload: nested_payload})
+                  
+                  - execute_cml: handler_path
+                    context: handler_context
+                  
+                  - let: handler_result.status = "success"
+                  - info: "EVENT: Handler {sub.handler} completed successfully"
+                else:
+                  - let: handler_result.status = "error"
+                  - let: handler_result.error = "Handler file not found: {handler_path}"
+                  - warn: "EVENT: Handler not found: {handler_path}"
+            
+            catch:
+              - let: handler_result.status = "error"
+              - let: handler_result.error = error.message
+              - warn: "EVENT: Handler {sub.handler} failed: {error.message}"
+          
+          - let: handler_result.duration_ms = now_ms() - handler_start
+          - let: handlers_executed = handlers_executed.append(handler_result)
+      
+      - let: total_duration = now_ms() - start_time
+      - info: "EVENT: All handlers executed in {total_duration}ms"
+  
+  - group: "Update event record"
+    do:
+      # Re-read events (might have been updated by handlers)
+      - read: events_file
+        into: events
+      
+      # Find and update our event
+      - for: i in range(events.length)
+        do:
+          - if: events[i].id == event_id
+            then:
+              - let: events[i].handlers_executed = handlers_executed
+              - let: events[i].duration_ms = total_duration
+              - let: events[i].status = "completed"
+              - break
+      
+      # Save updated events
+      - write: events_file
+        content: yaml(events)
+      
+      - info: "EVENT: Event {event_id} completed"
+  
+  - group: "Return result"
+    do:
+      - return: {
+          event_id: event_id,
+          handlers_executed: handlers_executed.length,
+          duration_ms: total_duration,
+          success: true
+        }
+
+# Helper functions (pseudo-code, would be implemented in CML runtime)
+# 
+# event_type_matches(pattern, actual):
+#   - Supports wildcards: "task.*" matches "task.created", "task.updated", etc.
+#   - Exact match: "task.created" matches only "task.created"
+# 
+# filter_matches(filter, payload):
+#   - Checks if all filter conditions match payload
+#   - Example: {workflow: "sbd.feature"} matches payload.workflow == "sbd.feature"
+#   - Supports arrays: {stage: ["designing", "implementing"]}
+# 
+# execute_cml(path, context):
+#   - Loads and executes CML file with given context
+#   - Context variables are available in the CML scope
+

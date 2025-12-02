@@ -1,0 +1,35 @@
+id: file-task
+name: "File-based Task Storage"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Simple file-based task storage implementation.
+
+  Tasks are stored as folders with files:
+  - status.yml - task state (properties)
+  - specs.md - specification
+  - design.md - design document (created during workflow)
+  - log.md - action log
+
+  Philosophy: Minimalism. Easy to understand, easy to debug.
+
+depends_on:
+  - core-concept # TASK, WORKFLOW, CONTEXT, EVENT abstractions
+
+provides:
+  concepts:
+    - FILE_TASK (concrete, implements: TASK)
+
+  methods:
+    - TASK.create
+    - TASK.get_state
+    - TASK.set_state
+    - TASK.get_property
+    - TASK.set_property
+    - TASK.log
+    - TASK.get_log
+
+status: stable
+author: "ClearMethod Team"
+license: "MIT"

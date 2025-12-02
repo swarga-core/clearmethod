@@ -1,0 +1,128 @@
+method: update_board
+description: "Regenerate board visualization from current task states"
+
+params:
+  - name: force
+    type: boolean
+    required: false
+    default: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Load configuration"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: kanban_config = config.packages?.file_kanban
+    
+    - if: !kanban_config?.enabled
+      then:
+        - info: "File-kanban is disabled"
+        - return: {columns: [], total_tasks: 0}
+    
+    - let: columns_config = kanban_config.columns || []
+    - let: output_file = kanban_config.output_file || ".cm/kanban/board.md"
+  
+  group: "Get all tasks"
+  do:
+    - terminal: "ls .cm/tasks/"
+      into: tasks_output
+      allow_failure: true
+    
+    - let: task_ids = tasks_output.split("\n").filter(id => id.trim().length > 0)
+    
+    - info: "Found {task_ids.length} task(s)"
+  
+  group: "Organize tasks by columns"
+  do:
+    - let: board_data = {
+        columns: [],
+        total_tasks: 0
+      }
+    
+    # Initialize columns
+    - for: col_config in columns_config
+      do:
+        - let: board_data.columns.push({
+            name: col_config.name,
+            states: col_config.states,
+            tasks: [],
+            count: 0
+          })
+    
+    # Assign tasks to columns
+    - for: task_id in task_ids
+      do:
+        # Get task state
+        - TASK.get_state(task_id)
+          into: task_state
+        
+        # Get kanban_column property (if set)
+        - TASK.get_property(task_id, "kanban_column")
+          into: kanban_column
+        
+        # Determine column
+        - let: assigned_column = null
+        
+        - if: kanban_column
+          then:
+            # Use explicit column assignment
+            - let: assigned_column = kanban_column
+          else:
+            # Use state-based mapping
+            - for: col in board_data.columns
+              do:
+                - if: col.states.includes(task_state)
+                  then:
+                    - let: assigned_column = col.name
+                    - break
+        
+        # Add task to column
+        - if: assigned_column
+          then:
+            - for: col in board_data.columns
+              do:
+                - if: col.name == assigned_column
+                  then:
+                    - let: col.tasks.push(task_id)
+                    - let: col.count = col.count + 1
+                    - let: board_data.total_tasks = board_data.total_tasks + 1
+  
+  group: "Generate markdown"
+  do:
+    - KANBAN.generate_markdown(kanban_config.show_properties)
+      into: markdown
+    
+    # Ensure directory exists
+    - terminal: "mkdir -p .cm/kanban"
+      allow_failure: true
+    
+    # Write board file
+    - write: output_file
+      contents: markdown
+    
+    - info: "Board updated: {board_data.total_tasks} task(s) across {board_data.columns.length} column(s)"
+  
+  group: "Update metadata"
+  do:
+    - let: board_data.last_updated = now()
+    
+    # Store in cache file for quick access
+    - write: ".cm/kanban/board-state.yml"
+      format: yaml
+      contents: board_data
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("kanban.board_updated", {
+        total_tasks: board_data.total_tasks,
+        columns: board_data.columns.map(c => ({name: c.name, count: c.count})),
+        timestamp: board_data.last_updated
+      })
+  
+  - return: board_data
+

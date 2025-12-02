@@ -1,0 +1,335 @@
+name: QA_GATE
+description: |
+  Abstract Quality Assurance Gate concept for code quality validation.
+  QA gates ensure code meets quality standards before progressing through workflow.
+  
+  Implementations must provide:
+  - Quality checks execution (linting, testing, coverage)
+  - Gate validation with pass/fail results
+  - Configurable rules and thresholds
+  - Detailed error reporting
+  - Integration with workflow stages
+
+type: abstract
+
+methods:
+  check:
+    description: |
+      Execute quality checks for specified gate.
+      Returns detailed results with pass/fail status.
+    params:
+      - name: gate_name
+        type: string
+        required: true
+        description: Name of the gate to check (e.g., "pre-commit", "verifying")
+      
+      - name: task_id
+        type: string
+        required: true
+        description: Task ID for context and logging
+      
+      - name: config
+        type: object
+        required: false
+        description: Override configuration for this check
+    
+    returns:
+      type: object
+      description: |
+        {
+          gate_name: string,
+          passed: boolean,
+          checks: [
+            {
+              name: string,
+              type: string,
+              passed: boolean,
+              score: number,
+              threshold: number,
+              message: string,
+              details: object
+            }
+          ],
+          summary: {
+            total: number,
+            passed: number,
+            failed: number,
+            warnings: number
+          },
+          timestamp: string
+        }
+  
+  validate:
+    description: |
+      Validate if all gates for current stage are passed.
+      Throws error if validation fails.
+    params:
+      - name: task_id
+        type: string
+        required: true
+        description: Task ID
+      
+      - name: stage
+        type: string
+        required: true
+        description: Current workflow stage
+    
+    returns:
+      type: boolean
+      description: true if all gates passed, throws error otherwise
+  
+  get_config:
+    description: |
+      Get quality gate configuration for project.
+    params:
+      - name: gate_name
+        type: string
+        required: false
+        description: Specific gate (empty = all gates)
+    
+    returns:
+      type: object
+      description: Gate configuration with thresholds and rules
+  
+  get_results:
+    description: |
+      Get historical results for quality gate checks.
+    params:
+      - name: task_id
+        type: string
+        required: true
+        description: Task ID
+      
+      - name: gate_name
+        type: string
+        required: false
+        description: Specific gate (empty = all gates)
+      
+      - name: limit
+        type: number
+        required: false
+        default: 10
+        description: Number of results to return
+    
+    returns:
+      type: array
+      description: Array of check results
+  
+  run_linter:
+    description: |
+      Run code linter and return results.
+    params:
+      - name: files
+        type: array<string>
+        required: false
+        description: Specific files to lint (empty = all project files)
+      
+      - name: fix
+        type: boolean
+        required: false
+        default: false
+        description: Auto-fix issues if possible
+    
+    returns:
+      type: object
+      description: |
+        {
+          total_issues: number,
+          errors: number,
+          warnings: number,
+          fixed: number,
+          files_checked: number,
+          issues: [
+            {
+              file: string,
+              line: number,
+              column: number,
+              severity: string,
+              rule: string,
+              message: string
+            }
+          ]
+        }
+  
+  run_tests:
+    description: |
+      Run test suite and return results.
+    params:
+      - name: test_pattern
+        type: string
+        required: false
+        description: Test file pattern (empty = all tests)
+      
+      - name: coverage
+        type: boolean
+        required: false
+        default: true
+        description: Generate coverage report
+    
+    returns:
+      type: object
+      description: |
+        {
+          total: number,
+          passed: number,
+          failed: number,
+          skipped: number,
+          duration_ms: number,
+          coverage: {
+            lines: number,
+            statements: number,
+            functions: number,
+            branches: number
+          },
+          failed_tests: [
+            {
+              name: string,
+              file: string,
+              error: string
+            }
+          ]
+        }
+  
+  check_coverage:
+    description: |
+      Check if code coverage meets threshold.
+    params:
+      - name: threshold
+        type: number
+        required: false
+        description: Coverage threshold percentage (defaults to config)
+    
+    returns:
+      type: object
+      description: |
+        {
+          passed: boolean,
+          coverage: number,
+          threshold: number,
+          uncovered_files: array<string>
+        }
+
+# Standard events emitted by QA_GATE implementations
+standard_events:
+  - event_type: quality.gate_checked
+    description: Emitted after gate check execution
+    payload:
+      task_id: string
+      gate_name: string
+      stage: string
+      passed: boolean
+      checks_total: number
+      checks_passed: number
+      timestamp: string
+  
+  - event_type: quality.gate_passed
+    description: Emitted when gate validation succeeds
+    payload:
+      task_id: string
+      gate_name: string
+      stage: string
+      score: number
+      timestamp: string
+  
+  - event_type: quality.gate_failed
+    description: Emitted when gate validation fails
+    payload:
+      task_id: string
+      gate_name: string
+      stage: string
+      errors: array
+      warnings: array
+      timestamp: string
+  
+  - event_type: quality.linter_completed
+    description: Emitted after linter run
+    payload:
+      task_id: string
+      total_issues: number
+      errors: number
+      warnings: number
+      files_checked: number
+      timestamp: string
+  
+  - event_type: quality.tests_completed
+    description: Emitted after test run
+    payload:
+      task_id: string
+      total: number
+      passed: number
+      failed: number
+      coverage: number
+      timestamp: string
+  
+  - event_type: quality.coverage_low
+    description: Emitted when coverage is below threshold
+    payload:
+      task_id: string
+      coverage: number
+      threshold: number
+      timestamp: string
+
+# Events that QA_GATE typically subscribes to
+subscribes_to:
+  - task.stage_completed
+  - vcs.commit_created
+  - task.property_changed
+
+# Gate types and typical configuration
+gate_types:
+  pre-commit:
+    description: Checks before committing code
+    typical_checks:
+      - linter
+      - formatting
+      - basic_tests
+    stage: any
+  
+  designing:
+    description: Design quality checks
+    typical_checks:
+      - design_document_exists
+      - architecture_approved
+    stage: designing
+  
+  implementing:
+    description: Implementation quality checks
+    typical_checks:
+      - linter
+      - unit_tests
+      - code_coverage
+    stage: implementing
+  
+  verifying:
+    description: Comprehensive verification
+    typical_checks:
+      - all_tests
+      - code_coverage
+      - integration_tests
+      - linter
+      - security_scan
+    stage: verifying
+  
+  pre-merge:
+    description: Final checks before merging
+    typical_checks:
+      - all_tests
+      - code_coverage
+      - linter
+      - build_success
+      - peer_review
+    stage: completing
+
+notes: |
+  QA_GATE implementations should:
+  1. Be configurable per project and per stage
+  2. Provide clear, actionable error messages
+  3. Support incremental checks (only changed files)
+  4. Allow overrides for exceptional cases (with logging)
+  5. Integrate with CI/CD pipelines
+  6. Cache results for performance
+  7. Support parallel check execution
+  8. Provide detailed reports for failed checks
+  9. Allow custom check plugins
+  10. Never block on warnings (only errors)
+

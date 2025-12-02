@@ -1,0 +1,90 @@
+id: smart-context
+name: "Smart Context Management"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Intelligent context management for AI agents.
+  Automatically loads relevant code, documentation, and artifacts
+  based on current task and workflow stage.
+  
+  Key features:
+  - JIT (Just-In-Time) context loading
+  - Semantic search for relevant files
+  - Auto-pruning of irrelevant context
+  - Context budget optimization
+  - Stage-aware context (different info for different stages)
+
+depends_on:
+  - core-concept    # CONTEXT, TASK, WORKFLOW
+  - file-task       # For task access
+
+provides:
+  concepts:
+    - SMART_CONTEXT (implements: CONTEXT)
+  
+  methods:
+    - CONTEXT.prime
+    - CONTEXT.load
+    - CONTEXT.smart_load      # Auto-determine what to load
+    - CONTEXT.prune           # Remove irrelevant context
+    - CONTEXT.get_budget      # Check token usage
+    - CONTEXT.optimize        # Optimize context for current stage
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+
+config_template:
+  smart_context:
+    enabled: true
+    
+    # Token budget
+    max_tokens: 100000
+    reserved_for_output: 8000
+    warning_threshold: 0.8
+    
+    # Auto-loading strategy
+    auto_load:
+      enabled: true
+      on_stage_change: true
+      on_property_access: true
+    
+    # Semantic search
+    semantic_search:
+      enabled: true
+      model: "text-embedding-3-small"
+      top_k: 5
+    
+    # Stage-specific context
+    stage_contexts:
+      designing:
+        - architecture docs
+        - design patterns
+        - similar implementations
+      
+      implementing:
+        - relevant source files
+        - API documentation
+        - test examples
+      
+      verifying:
+        - test files
+        - coverage reports
+        - acceptance criteria
+    
+    # Auto-pruning
+    auto_prune:
+      enabled: true
+      strategy: "lru"  # least recently used
+      keep_pinned: true
+
+notes: |
+  Smart Context is the evolution of manual context management.
+  
+  Goals:
+  - Agent always has exactly what it needs
+  - No token waste on irrelevant info
+  - Automatic adaptation to workflow stage
+  - Proactive loading based on patterns
+

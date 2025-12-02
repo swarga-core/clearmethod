@@ -1,0 +1,114 @@
+# FILE_TASK - Конкретная реализация TASK
+# Файловое хранилище задач
+
+concept:
+  id: FILE_TASK
+  name: "File-based Task"
+  type: concrete # Конкретная реализация
+  implements: TASK # Реализует интерфейс TASK из ядра
+  version: "0.1.0"
+  description: |
+    Конкретная реализация концепта TASK через файловую систему.
+
+    Каждая задача - это папка с файлами:
+    .cm/tasks/
+      TASK-123/
+        status.yml    - свойства задачи
+        specs.md      - спецификация
+        design.md     - дизайн
+        log.md        - журнал
+
+    Простая, понятная, легко отлаживаемая реализация.
+
+# Конфигурация
+config:
+  tasks_root: ".cm/tasks"
+  status_file: "status.yml"
+  log_file: "log.md"
+
+# Маппинг методов интерфейса TASK на реализации
+methods:
+  create:
+    file: methods/create.yml
+    description: "Создает папку задачи и начальные файлы"
+
+  get_state:
+    file: methods/get_state.yml
+    description: "Читает status из status.yml"
+
+  set_state:
+    file: methods/set_state.yml
+    description: "Обновляет status в status.yml"
+
+  get_property:
+    file: methods/get_property.yml
+    description: "Читает свойство из status.yml"
+
+  set_property:
+    file: methods/set_property.yml
+    description: "Обновляет свойство в status.yml"
+
+  log:
+    file: methods/log.yml
+    description: "Добавляет запись в log.md"
+
+  get_log:
+    file: methods/get_log.yml
+    description: "Читает весь log.md"
+
+# Структура status.yml
+status_structure:
+  format: |
+    id: TASK-123
+    title: "Task title"
+    workflow: psd.feature
+    status: designing
+    created_at: 2025-11-23T10:00:00Z
+    created_by: andrey
+    last_updated_at: 2025-11-23T12:00:00Z
+    last_updater: ai-agent
+
+    # Кастомные свойства (устанавливаются workflow)
+    specs_ready: true
+    design_completed: false
+    priority: high
+
+  notes: |
+    - YAML формат
+    - Базовые поля обязательны
+    - Кастомные свойства добавляются динамически
+    - last_updated_at обновляется автоматически при любом изменении
+
+# Примеры использования
+examples:
+  - description: "Создание задачи"
+    code: |
+      FILE_TASK.create("TASK-123", "Add notifications", "User story...", "andrey", "psd.feature")
+      # Создаст:
+      # .cm/tasks/TASK-123/status.yml
+      # .cm/tasks/TASK-123/specs.md
+      # .cm/tasks/TASK-123/log.md
+
+  - description: "Работа с состоянием"
+    code: |
+      current = FILE_TASK.get_state("TASK-123")  # → "creating"
+      FILE_TASK.set_state("TASK-123", "designing")
+
+  - description: "Работа со свойствами"
+    code: |
+      FILE_TASK.set_property("TASK-123", "priority", "high")
+      priority = FILE_TASK.get_property("TASK-123", "priority")  # → "high"
+
+  - description: "Логирование"
+    code: |
+      FILE_TASK.log("TASK-123", "Started design phase")
+
+# Примечания для агента
+agent_notes: |
+  При выполнении методов:
+
+  1. Всегда проверяй существование задачи (кроме create)
+  2. При ошибках сообщай подробно что не так
+  3. Обновляй last_updated_at при любых изменениях
+  4. Логируй важные действия
+  5. При create создавай ВСЕ необходимые файлы

@@ -1,0 +1,29 @@
+method: get_config
+description: "Get quality gate configuration for project"
+
+params:
+  - name: gate_name
+    type: string
+    required: false
+
+returns:
+  type: object
+
+instructions:
+  - read: ".cm/project.yml"
+    format: yaml
+    into: config
+  
+  - let: qa_config = config.packages?.qa_gates
+  
+  - if: !qa_config
+    then:
+      - return: {}
+  
+  - if: gate_name
+    then:
+      - let: gate_config = qa_config.gates?.[gate_name]
+      - return: gate_config || {}
+    else:
+      - return: qa_config
+

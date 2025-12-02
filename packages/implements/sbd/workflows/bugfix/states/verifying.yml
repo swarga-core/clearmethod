@@ -1,0 +1,73 @@
+name: verifying
+description: "Проверка исправления и тестирование"
+
+preconditions:
+  - TASK.get_property(task_id, "fix_complete") == true
+
+instructions:
+  - group: "Инициализация стадии"
+    do:
+      - EVENT.emit("task.stage_started", {task_id: task_id, stage: "verifying"})
+      - TASK.set_property(task_id, "stage", "verifying")
+      - TASK.log(task_id, "✓ Started verification of fix")
+  
+  - group: "Запуск всех тестов"
+    do:
+      - info: "Run full test suite to ensure no regression"
+      - ask: "All tests pass? (yes/no)"
+        into: all_tests_pass
+      
+      - TASK.set_property(task_id, "all_tests_pass", all_tests_pass)
+      
+      - if: all_tests_pass != "yes"
+        then:
+          - TASK.log(task_id, "❌ Tests failing - need to rework fix")
+          - TASK.set_property(task_id, "verification_failed", true)
+          - error: "Tests failed. Please return to fixing stage and adjust."
+      
+      - TASK.log(task_id, "✅ All tests pass")
+  
+  - group: "Ручная проверка"
+    do:
+      - info: "Manually verify the fix works in real scenario"
+      - let: steps = TASK.get_property(task_id, "reproduction_steps")
+      - info: "Original reproduction steps: {steps}"
+      
+      - ask: "Bug is fixed? Can no longer reproduce? (yes/no)"
+        into: bug_fixed
+      
+      - if: bug_fixed != "yes"
+        then:
+          - TASK.log(task_id, "❌ Bug still present")
+          - TASK.set_property(task_id, "bug_still_present", true)
+          - error: "Bug still occurs. Return to fixing."
+      
+      - TASK.set_property(task_id, "manually_verified", true)
+      - TASK.log(task_id, "✅ Manually verified - bug is fixed")
+  
+  - group: "Проверка побочных эффектов"
+    do:
+      - ask: "Any side effects or regressions noticed? (yes/no)"
+        into: has_side_effects
+      
+      - if: has_side_effects == "yes"
+        then:
+          - ask: "Describe side effects:"
+            into: side_effects
+          - TASK.set_property(task_id, "side_effects", side_effects)
+          - TASK.log(task_id, "⚠️ Side effects: {side_effects}")
+          - error: "Side effects found. Need to refine the fix."
+        else:
+          - TASK.log(task_id, "No side effects detected")
+  
+  - group: "Завершение стадии"
+    do:
+      - TASK.set_property(task_id, "verification_complete", true)
+      - EVENT.emit("task.stage_completed", {task_id: task_id, stage: "verifying"})
+      - EVENT.emit("quality.gate_passed", {task_id: task_id, gate: "bugfix_verification"})
+      - info: "✅ Verification complete. Fix is good!"
+
+postconditions:
+  - TASK.get_property(task_id, "all_tests_pass") == "yes"
+  - TASK.get_property(task_id, "manually_verified") == true
+

@@ -1,0 +1,5 @@
+# Add this to your project's .gitignore
+
+# ClearMethod local configuration (user-specific)
+.cm.conf
+

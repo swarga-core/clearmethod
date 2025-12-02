@@ -1,0 +1,50 @@
+method: validate
+description: "Validate if all gates for current stage are passed (throws error if not)"
+
+params:
+  - name: task_id
+    type: string
+    required: true
+  - name: stage
+    type: string
+    required: true
+
+returns:
+  type: boolean
+
+instructions:
+  group: "Get gate configuration for stage"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    - let: gate_config = config.packages?.qa_gates?.gates?.[stage]
+    
+    - if: !gate_config
+      then:
+        - info: "No QA gate configured for stage '{stage}', validation passed"
+        - return: true
+    
+    - if: !gate_config.enabled
+      then:
+        - info: "QA gate for stage '{stage}' is disabled, validation passed"
+        - return: true
+  
+  group: "Run gate checks"
+  do:
+    - QA_GATE.check(stage, task_id, null)
+      into: gate_result
+  
+  group: "Evaluate results"
+  do:
+    - if: gate_result.passed
+      then:
+        - info: "✅ Validation passed for stage '{stage}'"
+        - return: true
+      else:
+        - let: failed_checks = gate_result.checks.filter(c => !c.passed)
+        
+        - error: "❌ Validation failed for stage '{stage}'. {failed_checks.length} check(s) failed:\n" +
+                 failed_checks.map(c => "  - {c.name}: {c.message}").join("\n")
+

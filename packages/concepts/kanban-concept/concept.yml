@@ -1,0 +1,231 @@
+name: KANBAN
+description: |
+  Abstract Kanban Board concept for task visualization and workflow tracking.
+  Provides column-based organization of tasks with customizable mappings
+  to workflow states.
+  
+  Implementations must provide:
+  - Board state management (columns and tasks)
+  - Task movement between columns
+  - Board visualization generation
+  - Configurable column-to-state mapping
+  - Event-driven updates
+
+type: abstract
+
+methods:
+  update_board:
+    description: |
+      Regenerate board visualization from current task states.
+      Synchronizes board with actual task data.
+    params:
+      - name: force
+        type: boolean
+        required: false
+        default: false
+        description: Force regeneration even if no changes detected
+    
+    returns:
+      type: object
+      description: |
+        {
+          columns: [
+            {
+              name: string,
+              tasks: [task_id, ...],
+              count: number
+            }
+          ],
+          total_tasks: number,
+          last_updated: string
+        }
+  
+  move_task:
+    description: |
+      Manually move task to a different column.
+      Updates task property and optionally changes workflow state.
+    params:
+      - name: task_id
+        type: string
+        required: true
+        description: Task ID to move
+      
+      - name: to_column
+        type: string
+        required: true
+        description: Target column name
+      
+      - name: update_state
+        type: boolean
+        required: false
+        default: false
+        description: Also update workflow state to match column
+    
+    returns:
+      type: object
+      description: |
+        {
+          task_id: string,
+          from_column: string,
+          to_column: string,
+          state_updated: boolean
+        }
+  
+  get_board_state:
+    description: |
+      Get current board state without regenerating.
+    params: []
+    
+    returns:
+      type: object
+      description: |
+        {
+          columns: [
+            {
+              name: string,
+              states: [string],
+              tasks: [
+                {
+                  id: string,
+                  title: string,
+                  properties: object
+                }
+              ],
+              count: number
+            }
+          ],
+          config: object,
+          last_updated: string
+        }
+  
+  get_column_tasks:
+    description: |
+      Get all tasks in specific column.
+    params:
+      - name: column_name
+        type: string
+        required: true
+        description: Column name
+    
+    returns:
+      type: array
+      description: |
+        [
+          {
+            id: string,
+            title: string,
+            state: string,
+            properties: object
+          }
+        ]
+  
+  add_column:
+    description: |
+      Add new column to board configuration.
+    params:
+      - name: column_name
+        type: string
+        required: true
+        description: Column display name
+      
+      - name: states
+        type: array<string>
+        required: true
+        description: Workflow states mapped to this column
+      
+      - name: position
+        type: number
+        required: false
+        description: Column position (0-based, defaults to end)
+    
+    returns:
+      type: object
+      description: |
+        {
+          column_name: string,
+          states: array,
+          position: number
+        }
+  
+  remove_column:
+    description: |
+      Remove column from board configuration.
+    params:
+      - name: column_name
+        type: string
+        required: true
+        description: Column to remove
+      
+      - name: move_tasks_to
+        type: string
+        required: false
+        description: Column to move tasks to (if not specified, tasks stay in original states)
+    
+    returns:
+      type: boolean
+  
+  generate_markdown:
+    description: |
+      Generate markdown representation of board.
+    params:
+      - name: include_properties
+        type: array<string>
+        required: false
+        description: Task properties to include in output
+    
+    returns:
+      type: string
+      description: Markdown formatted board
+
+# Standard events emitted by KANBAN implementations
+standard_events:
+  - event_type: kanban.board_updated
+    description: Emitted after board regeneration
+    payload:
+      total_tasks: number
+      columns: array
+      timestamp: string
+  
+  - event_type: kanban.task_moved
+    description: Emitted when task moves between columns
+    payload:
+      task_id: string
+      from_column: string
+      to_column: string
+      from_state: string
+      to_state: string
+      timestamp: string
+  
+  - event_type: kanban.column_added
+    description: Emitted when new column is added
+    payload:
+      column_name: string
+      states: array
+      position: number
+      timestamp: string
+  
+  - event_type: kanban.column_removed
+    description: Emitted when column is removed
+    payload:
+      column_name: string
+      tasks_moved: number
+      timestamp: string
+
+# Events that KANBAN typically subscribes to
+subscribes_to:
+  - task.created
+  - task.state_changed
+  - task.property_changed
+  - task.workflow_completed
+
+notes: |
+  KANBAN implementations should:
+  1. Store column-to-state mapping in project configuration
+  2. Track task positions via task properties (kanban_column)
+  3. Auto-update board on task state changes
+  4. Generate human-readable visualizations (markdown, HTML, etc.)
+  5. Support configurable columns per project
+  6. Handle tasks without explicit column assignment (default to state-based)
+  7. Provide both full regeneration and incremental updates
+  8. Log all board operations for audit trail
+

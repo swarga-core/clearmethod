@@ -1,0 +1,95 @@
+method: create_pr
+description: "Create pull request (GitHub CLI required)"
+
+params:
+  - name: title
+    type: string
+    required: true
+  - name: description
+    type: string
+    required: false
+  - name: base_branch
+    type: string
+    required: false
+    default: "main"
+  - name: source_branch
+    type: string
+    required: false
+
+returns:
+  type: object
+
+instructions:
+  group: "Check GitHub CLI availability"
+  do:
+    - terminal: "which gh"
+      into: gh_path
+    
+    - if: !gh_path || gh_path.trim().length == 0
+      then:
+        - error: "GitHub CLI (gh) not installed. Install from https://cli.github.com/"
+  
+  group: "Determine source branch"
+  do:
+    - if: source_branch
+      then:
+        - let: source = source_branch
+      else:
+        - terminal: "git branch --show-current"
+          into: source
+        
+        - let: source = source.trim()
+  
+  group: "Validate branches"
+  do:
+    - if: source == base_branch
+      then:
+        - error: "Cannot create PR: source and base branches are the same ('{source}')"
+    
+    # Check if source branch has commits ahead of base
+    - terminal: "git log {base_branch}..{source} --oneline"
+      into: commits_ahead
+    
+    - if: commits_ahead.trim().length == 0
+      then:
+        - error: "No commits to create PR. Branch '{source}' is up-to-date with '{base_branch}'"
+  
+  group: "Build PR command"
+  do:
+    - let: cmd = 'gh pr create --base {base_branch} --head {source} --title "{title}"'
+    
+    - if: description
+      then:
+        - let: cmd = cmd + ' --body "{description}"'
+  
+  group: "Create PR"
+  do:
+    - terminal: cmd
+      into: pr_output
+    
+    # Parse PR number and URL from output
+    # Example output: "https://github.com/owner/repo/pull/123"
+    - let: pr_url = pr_output.trim().split("\n").pop()
+    - let: pr_number = parseInt(pr_url.split("/").pop())
+    
+    - info: "Created PR #{pr_number}: {title}"
+    
+    - let: result = {
+        pr_number: pr_number,
+        pr_url: pr_url,
+        title: title,
+        base_branch: base_branch,
+        source_branch: source
+      }
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("vcs.pr_created", {
+        pr_number: result.pr_number,
+        pr_url: result.pr_url,
+        title: title,
+        timestamp: now()
+      })
+  
+  - return: result
+

@@ -1,0 +1,87 @@
+handler: on_commit_created
+description: "Run quick quality checks after commit creation"
+
+subscribes_to: vcs.commit_created
+
+filter:
+  # Only react if qa_gates is enabled
+  config.packages.qa_gates.enabled: true
+
+priority: 70  # Run after commit is created
+
+instructions:
+  group: "Extract event data"
+  do:
+    - let: task_id = event.payload.task_id || "unknown"
+    - let: commit_hash = event.payload.commit_hash
+    - let: files_changed = event.payload.files_changed
+    
+    - info: "Commit {commit_hash.substring(0, 8)} created, running quick quality checks"
+  
+  group: "Check configuration"
+  do:
+    - read: ".cm/project.yml"
+      format: yaml
+      into: config
+    
+    # Check if pre-commit gate is configured
+    - let: pre_commit_gate = config.packages?.qa_gates?.gates?.["pre-commit"]
+    
+    - if: !pre_commit_gate?.enabled
+      then:
+        - info: "Pre-commit gate not enabled, skipping"
+        - return
+  
+  group: "Run quick linter check"
+  do:
+    - if: pre_commit_gate.checks?.includes("linter")
+      then:
+        - QA_GATE.run_linter(null, false)
+          into: linter_result
+        
+        - if: linter_result.errors > 0
+          then:
+            - warn: "⚠️ Linter found {linter_result.errors} error(s) in committed code"
+            - warn: "Consider fixing and amending the commit"
+            
+            - if: task_id != "unknown"
+              then:
+                - TASK.log(task_id, "Commit {commit_hash.substring(0, 8)}: linter found {linter_result.errors} error(s)")
+          else:
+            - info: "✅ Linter passed for commit {commit_hash.substring(0, 8)}"
+  
+  group: "Run basic tests if configured"
+  do:
+    - if: pre_commit_gate.checks?.includes("basic_tests")
+      then:
+        - QA_GATE.run_tests(null, false)
+          into: test_result
+        
+        - if: test_result.failed > 0
+          then:
+            - warn: "⚠️ {test_result.failed} test(s) failed after commit"
+            
+            - if: task_id != "unknown"
+              then:
+                - TASK.log(task_id, "Commit {commit_hash.substring(0, 8)}: {test_result.failed} test(s) failed")
+          else:
+            - info: "✅ Tests passed for commit {commit_hash.substring(0, 8)}"
+
+notes: |
+  This handler performs quick quality checks after commits.
+  
+  Unlike stage-based gates, this is informational only - it doesn't block commits
+  (commit already happened), but warns about issues.
+  
+  Example configuration:
+  
+  packages:
+    qa_gates:
+      enabled: true
+      gates:
+        pre-commit:  # Special gate name for post-commit checks
+          enabled: true
+          checks:
+            - linter
+            - basic_tests
+

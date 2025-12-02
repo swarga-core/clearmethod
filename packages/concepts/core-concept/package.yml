@@ -1,0 +1,38 @@
+id: core-concept
+name: "Core Concepts"
+type: concept
+version: "1.0.0"
+
+description: |
+  Core abstract concepts that define the foundation of ClearMethod framework.
+  
+  This package provides the fundamental abstractions:
+  - TASK - Unit of work management
+  - WORKFLOW - State machine for task progression
+  - CONTEXT - AI agent context management
+  - EVENT - Inter-component communication
+  
+  These concepts form the minimal set of abstractions needed for any
+  ClearMethod-based system. All other concepts are optional extensions.
+
+provides:
+  concepts:
+    - TASK (abstract)
+    - WORKFLOW (abstract)
+    - CONTEXT (abstract)
+    - EVENT (abstract)
+
+status: stable
+author: "ClearMethod Team"
+license: "MIT"
+
+notes: |
+  This is the ONLY privileged package in the system - it defines
+  the core contracts that all other packages depend on.
+  
+  Design philosophy:
+  - Minimal set of abstractions
+  - No implementation details
+  - Pure interface definitions
+  - Framework-agnostic
+

@@ -1,0 +1,93 @@
+method: create_branch
+description: "Create a new branch"
+
+params:
+  - name: branch_name
+    type: string
+    required: true
+  - name: from_branch
+    type: string
+    required: false
+  - name: checkout
+    type: boolean
+    required: false
+    default: true
+
+returns:
+  type: object
+
+instructions:
+  group: "Validate branch name"
+  do:
+    - if: !branch_name || branch_name.length < 1
+      then:
+        - error: "Branch name cannot be empty"
+    
+    # Check if branch name is valid (no spaces, special chars)
+    - if: branch_name.match(/[^a-zA-Z0-9\-_\/]/)
+      then:
+        - error: "Branch name contains invalid characters. Use only a-z, A-Z, 0-9, -, _, /"
+  
+  group: "Check if branch exists"
+  do:
+    - terminal: "git branch --list {branch_name}"
+      into: existing
+    
+    - if: existing.trim().length > 0
+      then:
+        - error: "Branch '{branch_name}' already exists"
+  
+  group: "Determine base branch"
+  do:
+    - if: from_branch
+      then:
+        - let: base = from_branch
+        
+        # Verify base branch exists
+        - terminal: "git branch --list {base}"
+          into: base_exists
+        
+        - if: base_exists.trim().length == 0
+          then:
+            - error: "Base branch '{base}' does not exist"
+      else:
+        - terminal: "git branch --show-current"
+          into: base
+        
+        - let: base = base.trim()
+  
+  group: "Create branch"
+  do:
+    - terminal: "git branch {branch_name} {base}"
+      into: create_output
+    
+    - info: "Created branch '{branch_name}' from '{base}'"
+    
+    - let: result = {
+        branch: branch_name,
+        from_branch: base,
+        checked_out: false
+      }
+  
+  group: "Checkout if requested"
+  do:
+    - if: checkout
+      then:
+        - terminal: "git checkout {branch_name}"
+          into: checkout_output
+        
+        - let: result.checked_out = true
+        
+        - info: "Switched to branch '{branch_name}'"
+  
+  group: "Emit event"
+  do:
+    - EVENT.emit("vcs.branch_created", {
+        branch_name: branch_name,
+        from_branch: base,
+        checked_out: result.checked_out,
+        timestamp: now()
+      })
+  
+  - return: result
+

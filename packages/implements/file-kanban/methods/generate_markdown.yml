@@ -1,0 +1,63 @@
+method: generate_markdown
+description: "Generate markdown representation of board"
+
+params:
+  - name: include_properties
+    type: array<string>
+    required: false
+
+returns:
+  type: string
+
+instructions:
+  group: "Get board state"
+  do:
+    - KANBAN.get_board_state()
+      into: board_state
+  
+  group: "Build markdown"
+  do:
+    - let: md = "# Kanban Board\n\n"
+    - let: md = md + "> Last updated: {board_state.last_updated || now()}\n\n"
+    - let: md = md + "**Total tasks:** {board_state.total_tasks}\n\n"
+    - let: md = md + "---\n\n"
+    
+    # Create columns
+    - for: col in board_state.columns
+      do:
+        - let: md = md + "## {col.name} ({col.count})\n\n"
+        
+        - if: col.tasks.length == 0
+          then:
+            - let: md = md + "*No tasks in this column*\n\n"
+          else:
+            - for: task_id in col.tasks
+              do:
+                # Get task details
+                - TASK.get_property(task_id, "title")
+                  into: task_title
+                
+                - TASK.get_state(task_id)
+                  into: task_state
+                
+                - let: md = md + "- **[{task_id}]** {task_title || 'No title'}\n"
+                - let: md = md + "  - State: `{task_state}`\n"
+                
+                # Add optional properties
+                - if: include_properties && include_properties.length > 0
+                  then:
+                    - for: prop_name in include_properties
+                      do:
+                        - TASK.get_property(task_id, prop_name)
+                          into: prop_value
+                        
+                        - if: prop_value
+                          then:
+                            - let: md = md + "  - {prop_name}: {prop_value}\n"
+                
+                - let: md = md + "\n"
+        
+        - let: md = md + "---\n\n"
+  
+  - return: md
+

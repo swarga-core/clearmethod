@@ -1,0 +1,43 @@
+# TASK.get_property - Получить значение свойства задачи
+
+method:
+  name: get_property
+  concept: TASK
+  implements: TASK.get_property
+  version: "0.1.0"
+  description: "Читает значение свойства из status.yml"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "ID задачи"
+  
+  - name: property_name
+    type: string
+    required: true
+    description: "Имя свойства"
+
+preconditions:
+  - description: "Задача существует"
+    check: "exists(.cm/tasks/{task_id})"
+    error_message: "Task {task_id} not found"
+
+execute:
+  - let: status_file = ".cm/tasks/{task_id}/status.yml"
+  
+  - "Read YAML file {status_file}"
+  - "Parse YAML content"
+  - "Extract field {property_name}"
+  - return: property_value
+
+postconditions: []
+
+examples:
+  - code: |
+      priority = TASK.get_property("TASK-123", "priority")
+      # Returns: "high" или null
+
+agent_notes: |
+  - Возвращает null если свойства нет
+  - Не ошибка - просто null

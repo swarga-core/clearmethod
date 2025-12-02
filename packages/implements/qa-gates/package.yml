@@ -1,0 +1,117 @@
+id: qa-gates
+name: "Quality Assurance Gates"
+type: implementation
+version: "0.1.0"
+description: |
+  Quality gate system for code validation in ClearMethod workflows.
+  Enforces quality standards through automated checks at workflow stages.
+
+depends_on:
+  - core-concept # TASK, EVENT abstractions
+  - qa-gate-concept # QA_GATE abstract concept
+  - file-task # For task access
+  - basic-events # For event handling
+
+provides:
+  concepts:
+    - BASIC_QA_GATE
+
+  methods:
+    - QA_GATE.check
+    - QA_GATE.validate
+    - QA_GATE.get_config
+    - QA_GATE.get_results
+    - QA_GATE.run_linter
+    - QA_GATE.run_tests
+    - QA_GATE.check_coverage
+
+  handlers:
+    - on_stage_completed
+    - on_commit_created
+
+config_template:
+  qa_gates:
+    # Enable/disable gates globally
+    enabled: true
+
+    # Default thresholds
+    defaults:
+      min_coverage: 80
+      max_linter_errors: 0
+      max_linter_warnings: 10
+      require_tests: true
+
+    # Gates by stage
+    gates:
+      designing:
+        enabled: false
+        checks:
+          - design_document_exists
+
+      implementing:
+        enabled: true
+        checks:
+          - linter
+          - basic_tests
+        linter:
+          enabled: true
+          auto_fix: false
+          fail_on_error: true
+          fail_on_warning: false
+        tests:
+          enabled: true
+          pattern: "**/*.test.{js,ts,py}"
+          require_coverage: false
+
+      verifying:
+        enabled: true
+        checks:
+          - linter
+          - all_tests
+          - coverage
+        linter:
+          enabled: true
+          auto_fix: false
+          fail_on_error: true
+          fail_on_warning: false
+        tests:
+          enabled: true
+          pattern: "**/*.test.{js,ts,py}"
+          require_coverage: true
+          min_coverage: 80
+        coverage:
+          enabled: true
+          min_lines: 80
+          min_functions: 75
+          min_branches: 70
+
+      completing:
+        enabled: true
+        checks:
+          - linter
+          - all_tests
+          - coverage
+        require_all_passed: true
+
+    # Linter configuration
+    linter:
+      command: "npm run lint" # or "pylint", "eslint", etc.
+      fix_command: "npm run lint:fix"
+      config_file: ".eslintrc.json"
+
+    # Test configuration
+    tests:
+      command: "npm test"
+      coverage_command: "npm run test:coverage"
+      watch: false
+
+    # Actions on failure
+    on_failure:
+      block_progression: true
+      create_task_note: true
+      emit_event: true
+      notify: false
+
+status: mvp
+author: "ClearMethod Team"
+license: "MIT"

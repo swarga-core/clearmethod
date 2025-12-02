@@ -1,0 +1,80 @@
+name: get_history
+description: |
+  Query event history with optional filters.
+  Returns events in reverse chronological order (newest first).
+
+params:
+  - name: task_id
+    type: string
+    required: false
+  
+  - name: event_type
+    type: string
+    required: false
+  
+  - name: limit
+    type: number
+    required: false
+    default: 50
+  
+  - name: since
+    type: string
+    required: false
+
+instructions:
+  - group: "Read event log"
+    do:
+      - let: events_file = ".cm/events/events.yml"
+      
+      - read: events_file
+        into: events
+        default: []
+      
+      - info: "EVENT: Querying event history (total: {events.length})"
+  
+  - group: "Apply filters"
+    do:
+      - let: filtered = []
+      
+      - for: event in events
+        do:
+          - let: matches = true
+          
+          # Filter by task_id
+          - if: task_id && event.payload.task_id != task_id
+            then:
+              - let: matches = false
+          
+          # Filter by event_type (supports wildcards)
+          - if: event_type && !event_type_matches(event_type, event.type)
+            then:
+              - let: matches = false
+          
+          # Filter by timestamp
+          - if: since && event.timestamp < since
+            then:
+              - let: matches = false
+          
+          - if: matches
+            then:
+              - let: filtered = filtered.append(event)
+      
+      - info: "EVENT: {filtered.length} events match filters"
+  
+  - group: "Sort and limit"
+    do:
+      # Sort by timestamp descending (newest first)
+      - let: sorted = sort(filtered, by: "timestamp", order: "desc")
+      
+      # Apply limit
+      - let: result_limit = limit || 50
+      - if: sorted.length > result_limit
+        then:
+          - let: sorted = sorted.slice(0, result_limit)
+      
+      - info: "EVENT: Returning {sorted.length} events"
+  
+  - group: "Return results"
+    do:
+      - return: sorted
+

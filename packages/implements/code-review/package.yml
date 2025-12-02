@@ -1,0 +1,133 @@
+id: code-review
+name: "AI-Powered Code Review"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Automated code review integrated with workflow stages.
+  AI agent analyzes code for issues, best practices, and improvements.
+  
+  Key features:
+  - Automated code quality checks
+  - Security vulnerability detection
+  - Performance optimization suggestions
+  - Best practices enforcement
+  - Style and consistency checks
+  - Integration with quality gates
+
+depends_on:
+  - core-concept    # TASK, WORKFLOW, EVENT
+  - file-task       # For task access
+  - basic-events    # For event handling
+  - qa-gates        # For quality integration
+
+provides:
+  methods:
+    - REVIEW.analyze           # Analyze code changes
+    - REVIEW.get_issues        # Get review findings
+    - REVIEW.approve           # Mark review as approved
+    - REVIEW.request_changes   # Request changes
+  
+  handlers:
+    - on_stage_completed      # Auto-review after implementation
+    - on_commit_created       # Review each commit
+
+status: planned
+author: "ClearMethod Team"
+license: "MIT"
+
+config_template:
+  code_review:
+    enabled: true
+    
+    # Review triggers
+    auto_review:
+      enabled: true
+      on_stages:
+        - implementing
+        - verifying
+      on_commit: true
+      on_pr_create: true
+    
+    # Review categories
+    categories:
+      quality:
+        enabled: true
+        checks:
+          - code_complexity
+          - code_duplication
+          - naming_conventions
+          - function_length
+          - class_design
+      
+      security:
+        enabled: true
+        checks:
+          - sql_injection
+          - xss_vulnerabilities
+          - auth_issues
+          - secrets_in_code
+          - unsafe_dependencies
+      
+      performance:
+        enabled: true
+        checks:
+          - n_plus_one_queries
+          - memory_leaks
+          - inefficient_algorithms
+          - unnecessary_loops
+      
+      maintainability:
+        enabled: true
+        checks:
+          - test_coverage
+          - documentation
+          - error_handling
+          - logging
+          - dead_code
+    
+    # Severity levels
+    severity:
+      blocker:
+        action: "fail"       # Fail quality gate
+        notify: true
+      
+      critical:
+        action: "warn"
+        notify: true
+      
+      major:
+        action: "warn"
+        notify: false
+      
+      minor:
+        action: "pass"
+        notify: false
+    
+    # Integration
+    integration:
+      qa_gates: true
+      block_on_issues: true
+      min_approval_score: 7.0  # 0-10 scale
+    
+    # AI reviewer
+    ai:
+      model: "gpt-4"
+      temperature: 0.2
+      max_tokens: 2000
+      focus:
+        - security
+        - performance
+        - maintainability
+
+notes: |
+  Code Review provides AI-powered code analysis integrated
+  into the development workflow.
+  
+  Goals:
+  - Catch issues early
+  - Enforce best practices
+  - Improve code quality
+  - Security-first approach
+  - Learn from feedback
+

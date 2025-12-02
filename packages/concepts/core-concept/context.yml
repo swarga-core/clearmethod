@@ -1,0 +1,134 @@
+# CONTEXT - Абстрактный концепт (интерфейс)
+# Определяет интерфейс для управления контекстным окном агента
+
+concept:
+  id: CONTEXT
+  name: "Context"
+  type: abstract # Это интерфейс
+  version: "0.1.0"
+  description: |
+    Абстрактный концепт для управления контекстным окном ИИ-агента.
+
+    Философия: Токены - это валюта. Загружаем минимум нужного, в нужный момент.
+
+    CONTEXT отвечает за:
+    - Priming (начальная загрузка контекста при запуске нового чата)
+    - Загрузка специфичных сегментов по мере необходимости
+    - Управление объемом загруженного контекста
+
+# Свойства
+properties:
+  - name: priming_config
+    type: string
+    description: "Путь к файлу priming.yml проекта"
+    required: true
+    default: ".cm/priming.yml"
+
+  - name: loaded_segments
+    type: array<string>
+    description: "Список уже загруженных сегментов контекста"
+    required: false
+
+# Методы (сигнатуры)
+methods:
+  - name: prime
+    description: "Загрузить начальный контекст при запуске нового чата"
+    signature: "prime() → void"
+    parameters: []
+    returns: void
+    notes: |
+      - Читает .cm/priming.yml
+      - Загружает все primers в порядке приоритета:
+        1. Core primers (ядро фреймворка)
+        2. Project primers (контекст проекта)
+        3. Extension primers (активные расширения)
+      - Агент получает полное понимание проекта и доступных команд
+      - Это блокирующая операция (но быстрая при качественном контексте)
+
+  - name: load
+    description: "Загрузить специфичные сегменты контекста"
+    signature: "load(context_info: string) → void"
+    parameters:
+      - name: context_info
+        type: string
+        required: true
+        description: "Идентификатор контекста для загрузки (например, 'module:auth')"
+    returns: void
+    notes: |
+      - Загружает дополнительный контекст по мере необходимости
+      - Используется для JIT (Just-In-Time) загрузки
+      - Примеры: "module:authentication", "workflow:feature", "package:vcs"
+
+# Структура priming.yml (для справки)
+priming_structure:
+  format: |
+    primers:
+      core:
+        - .cm/core/primer.md
+        - .cm/core/commands/*.md
+      
+      project:
+        - .cm/context/architecture.md
+        - .cm/context/tech-stack.md
+        - .cm/context/conventions.md
+      
+      packages:
+        - .cm/packages/file-task/primer.md
+        - .cm/packages/psd/primer.md
+
+  notes: |
+    - Primers группируются по категориям
+    - Порядок загрузки: core → project → packages
+    - Каждый primer должен быть кратким и емким
+    - Цель: дать агенту полное понимание минимальным объемом токенов
+
+# Примеры использования
+examples:
+  - description: "Priming при запуске чата"
+    code: |
+      # Пользователь открывает новый чат
+      User: "/cm-prime"
+
+      # Агент выполняет:
+      CONTEXT.prime()
+
+      # Результат: Контекст загружен, агент готов к работе
+
+  - description: "Загрузка дополнительного контекста"
+    code: |
+      # При работе с модулем аутентификации:
+      CONTEXT.load("module:authentication")
+
+      # Загружается .cm/context/modules/authentication.md
+
+# Стратегии контекста (для будущих версий)
+strategies:
+  - name: "Layered Context"
+    description: "Послойная загрузка: базовый → расширенный → полный"
+    status: planned
+
+  - name: "JIT Context"
+    description: "Загрузка только когда нужно"
+    status: planned
+
+  - name: "Context Reset"
+    description: "Очистка контекста между этапами (Stage-Based Dev)"
+    status: planned
+
+# Примечания для разработчиков
+notes: |
+  Качественный контекст - ключ к эффективной работе агента.
+
+  Принципы создания primers:
+  1. Краткость - максимум информации минимумом токенов
+  2. Структурированность - четкие секции и заголовки
+  3. Ориентированность на LLM - писать для агента, а не для человека
+  4. Актуальность - регулярно обновлять
+  5. Примеры - конкретные примеры использования
+
+  Типичные ошибки:
+  - Слишком подробные primers (экономьте токены!)
+  - Устаревшая информация
+  - Дублирование информации между primers
+  - Отсутствие примеров
+

@@ -1,0 +1,56 @@
+# TASK.set_state - Установить состояние задачи
+
+method:
+  name: set_state
+  concept: TASK
+  implements: TASK.set_state
+  version: "0.1.0"
+  description: "Обновляет текущее состояние задачи в status.yml"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "ID задачи"
+  
+  - name: state
+    type: string
+    required: true
+    description: "Новое состояние (например, 'designing')"
+
+preconditions:
+  - description: "Задача существует"
+    check: "exists(.cm/tasks/{task_id})"
+    error_message: "Task {task_id} not found"
+
+execute:
+  - let: status_file = ".cm/tasks/{task_id}/status.yml"
+  - let: current_time = current_datetime()
+  
+  # 1. Читаем текущий status.yml
+  - "Read YAML file {status_file}"
+  - "Parse YAML content"
+  
+  # 2. Обновляем поля
+  - "Update field 'status' = {state}"
+  - "Update field 'last_updated_at' = {current_time}"
+  - "Update field 'last_updater' = 'ai-agent'"
+  
+  # 3. Записываем обратно
+  - "Write updated YAML to {status_file}"
+  
+  # 4. Логируем изменение
+  - TASK.log("{task_id}", "State changed to: {state}")
+
+postconditions:
+  - description: "Состояние обновлено"
+    check: "TASK.get_state({task_id}) == {state}"
+
+examples:
+  - code: |
+      TASK.set_state("TASK-123", "implementing")
+
+agent_notes: |
+  - Всегда обновляй last_updated_at
+  - Всегда логируй изменение состояния
+  - Проверяй что файл успешно записан

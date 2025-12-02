@@ -1,0 +1,209 @@
+# TASK - Абстрактный концепт (интерфейс)
+# Определяет интерфейс для работы с задачами
+
+concept:
+  id: TASK
+  name: "Task"
+  type: abstract # Это интерфейс, реализации в расширениях
+  version: "0.1.0"
+  description: |
+    Абстрактный концепт для работы с задачами.
+    Задача - это контейнер состояния, который перемещается по графу workflow,
+    накапливая данные и изменения.
+
+    Этот концепт определяет ТОЛЬКО интерфейс (сигнатуры методов).
+    Конкретные реализации предоставляются расширениями (например, FILE_TASK).
+
+# Свойства задачи (интерфейс)
+properties:
+  - name: id
+    type: string
+    description: "Уникальный идентификатор задачи (например, TASK-123)"
+    required: true
+
+  - name: title
+    type: string
+    description: "Краткое название задачи"
+    required: true
+
+  - name: content
+    type: text
+    description: "Описание/спецификация задачи"
+    required: false
+
+  - name: creator
+    type: string
+    description: "Кто создал задачу"
+    required: true
+
+  - name: created_at
+    type: datetime
+    description: "Когда создана задача"
+    required: true
+
+  - name: last_updated_at
+    type: datetime
+    description: "Последнее обновление"
+    required: true
+
+  - name: last_updater
+    type: string
+    description: "Кто последний раз обновлял"
+    required: false
+
+  - name: workflow
+    type: string
+    description: "ID рабочего процесса (например, 'psd.feature')"
+    required: true
+
+  - name: status
+    type: string
+    description: "Текущее состояние в workflow (например, 'designing')"
+    required: true
+
+# Методы (сигнатуры)
+# ВАЖНО: Это только описание интерфейса, реализация в расширениях
+methods:
+  - name: create
+    description: "Создать новую задачу"
+    signature: "create(id: string, title: string, content: text, creator: string, workflow: string) → void"
+    parameters:
+      - name: id
+        type: string
+        required: true
+        description: "Уникальный идентификатор задачи"
+
+      - name: title
+        type: string
+        required: true
+        description: "Название задачи"
+
+      - name: content
+        type: text
+        required: false
+        description: "Описание/спецификация задачи"
+
+      - name: creator
+        type: string
+        required: true
+        description: "Кто создает задачу"
+
+      - name: workflow
+        type: string
+        required: true
+        description: "ID workflow для задачи"
+
+    returns: void
+
+  - name: get_state
+    description: "Получить текущее состояние задачи"
+    signature: "get_state() → string"
+    parameters: []
+    returns: string
+
+  - name: set_state
+    description: "Установить состояние задачи"
+    signature: "set_state(state: string) → void"
+    parameters:
+      - name: state
+        type: string
+        required: true
+        description: "Новое состояние задачи"
+    returns: void
+
+  - name: get_property
+    description: "Получить значение свойства задачи"
+    signature: "get_property(name: string) → value"
+    parameters:
+      - name: name
+        type: string
+        required: true
+        description: "Имя свойства"
+    returns: value
+
+  - name: set_property
+    description: "Установить значение свойства задачи"
+    signature: "set_property(name: string, value: any) → void"
+    parameters:
+      - name: name
+        type: string
+        required: true
+        description: "Имя свойства"
+
+      - name: value
+        type: any
+        required: true
+        description: "Значение свойства"
+    returns: void
+
+  - name: log
+    description: "Добавить запись в журнал задачи"
+    signature: "log(entry: string) → void"
+    parameters:
+      - name: entry
+        type: string
+        required: true
+        description: "Текст записи в журнал"
+    returns: void
+
+  - name: get_log
+    description: "Получить журнал задачи"
+    signature: "get_log() → array<string>"
+    parameters: []
+    returns: array<string>
+
+# Примеры использования
+examples:
+  - description: "Создание задачи"
+    code: |
+      TASK.create(
+        "TASK-123",
+        "Add notification system",
+        "Implement push notifications for users",
+        "andrey",
+        "psd.feature"
+      )
+
+  - description: "Работа с состоянием"
+    code: |
+      current_state = TASK.get_state()
+      TASK.set_state("implementing")
+
+  - description: "Работа со свойствами"
+    code: |
+      TASK.set_property("priority", "high")
+      priority = TASK.get_property("priority")
+
+  - description: "Логирование"
+    code: |
+      TASK.log("Started implementation phase")
+
+# Реализации
+# Перечисление расширений, которые реализуют этот интерфейс
+implementations:
+  - id: file-task
+    name: "FILE_TASK"
+    description: "Файловое хранилище задач"
+    status: mvp
+
+  - id: database-task
+    name: "DATABASE_TASK"
+    description: "Хранение задач в БД"
+    status: planned
+
+  - id: mcp-task
+    name: "MCP_TASK"
+    description: "Интеграция с внешними таск-трекерами"
+    status: planned
+
+# Примечания для разработчиков расширений
+notes: |
+  При реализации этого интерфейса:
+
+  1. Расширение должно объявить `implements: TASK` в своем concept.yml
+  2. Расширение должно предоставить реализацию ВСЕХ методов интерфейса
+  3. Сигнатуры методов должны точно совпадать
+  4. Можно добавлять дополнительные методы, специфичные для реализации
+  5. Все методы должны логировать свои действия
+  6. Обязательна валидация входных параметров
+

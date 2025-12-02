@@ -1,0 +1,118 @@
+state: planning
+description: Create detailed implementation plan based on design
+
+on_enter:
+  context:
+    load:
+      - tasks/{{task_id}}/task.yml
+      - tasks/{{task_id}}/design.md
+      - tasks/{{task_id}}/specs/
+      - project structure overview
+    
+  instruction: |
+    You are in the PLANNING stage. Your goal is to create a detailed, step-by-step implementation plan.
+    
+    Based on the design document, you need to:
+    
+    1. **Break down into phases/steps**
+       - Organize work into logical sequential phases
+       - Each phase should have clear objectives
+       - Identify dependencies between phases
+    
+    2. **List all files to create/modify**
+       - Specify exact file paths
+       - Indicate whether file is new or existing
+       - Note the purpose of each file
+    
+    3. **Create actionable checklist**
+       - Break each phase into concrete tasks
+       - Tasks should be small enough to track progress
+       - Use checkboxes for tracking
+    
+    4. **Identify risks and dependencies**
+       - Note any blocking dependencies
+       - Highlight potential complexity areas
+       - Suggest order of implementation
+    
+    5. **Consider testing strategy**
+       - Plan where tests are needed
+       - Identify integration points to test
+    
+    Create a plan.md file with this structure:
+    
+    ```markdown
+    # Implementation Plan: [Task Description]
+    
+    ## Overview
+    Brief summary of implementation approach
+    
+    ## Phases
+    
+    ### Phase 1: [Name]
+    **Objective:** What this phase achieves
+    **Dependencies:** None / Requires Phase X
+    
+    - [ ] Step 1.1: Description
+    - [ ] Step 1.2: Description
+    ...
+    
+    ### Phase 2: [Name]
+    ...
+    
+    ## Files to Create/Modify
+    
+    **New Files:**
+    - `path/to/file.ext` - Purpose
+    
+    **Modified Files:**
+    - `path/to/existing.ext` - Changes needed
+    
+    ## Testing Strategy
+    - Unit tests for X
+    - Integration tests for Y
+    - E2E tests for Z
+    
+    ## Risks and Considerations
+    - Potential issue 1
+    - Complexity area 2
+    
+    ## Estimated Complexity
+    Low / Medium / High (with justification)
+    ```
+    
+    **Important:**
+    - Plan should be concrete and actionable
+    - Avoid vague descriptions
+    - Think about order and dependencies
+    - The plan will guide the implementing stage
+
+artifacts:
+  required:
+    - plan.md
+  optional:
+    - checklist.md  # Detailed checklist if plan is complex
+
+on_exit:
+  validation:
+    - file_exists: tasks/{{task_id}}/plan.md
+    - plan_has_phases: true
+    - plan_has_files_list: true
+  
+  gate:
+    type: human_review
+    question: "Is the implementation plan clear, complete, and actionable?"
+    options:
+      - approve: Transition to implementing
+      - revise: Stay in planning, iterate on plan
+      - redesign: Return to designing stage
+
+next_stage: implementing
+
+events:
+  on_complete:
+    - emit: task.stage_completed
+      data:
+        task_id: "{{task_id}}"
+        stage: planning
+        artifacts: [plan.md]
+

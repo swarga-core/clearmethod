@@ -1,0 +1,59 @@
+# TASK.set_property - Установить значение свойства задачи
+
+method:
+  name: set_property
+  concept: TASK
+  implements: TASK.set_property
+  version: "0.1.0"
+  description: "Обновляет значение свойства в status.yml"
+
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    description: "ID задачи"
+  
+  - name: property_name
+    type: string
+    required: true
+    description: "Имя свойства"
+  
+  - name: value
+    type: any
+    required: true
+    description: "Значение свойства"
+
+preconditions:
+  - description: "Задача существует"
+    check: "exists(.cm/tasks/{task_id})"
+    error_message: "Task {task_id} not found"
+
+execute:
+  - let: status_file = ".cm/tasks/{task_id}/status.yml"
+  - let: current_time = current_datetime()
+  
+  # 1. Читаем status.yml
+  - "Read YAML file {status_file}"
+  - "Parse YAML content"
+  
+  # 2. Обновляем свойство
+  - "Set field {property_name} = {value}"
+  - "Update field 'last_updated_at' = {current_time}"
+  - "Update field 'last_updater' = 'ai-agent'"
+  
+  # 3. Записываем обратно
+  - "Write updated YAML to {status_file}"
+
+postconditions:
+  - description: "Свойство обновлено"
+    check: "TASK.get_property({task_id}, {property_name}) == {value}"
+
+examples:
+  - code: |
+      TASK.set_property("TASK-123", "priority", "high")
+      TASK.set_property("TASK-123", "design_approved", true)
+
+agent_notes: |
+  - Создает свойство если не существует
+  - Обновляет если существует
+  - Всегда обновляй last_updated_at

@@ -1,0 +1,29 @@
+id: basic-events
+name: "Basic Event System"
+type: implementation
+version: "1.0.0"
+description: |
+  Basic file-based event system implementation.
+  Provides synchronous event emission, subscription management, and event history.
+
+  Storage:
+  - .cm/events/events.yml - Event history log
+  - .cm/events/subscriptions.yml - Active subscriptions
+
+  Features:
+  - Synchronous handler execution
+  - Priority-based handler ordering
+  - Event filtering
+  - Cascade support (handlers can emit new events)
+  - Event history and auditing
+
+depends_on:
+  - core-concept # EVENT abstract concept (part of core)
+
+provides:
+  concepts:
+    - BASIC_EVENT
+
+status: stable
+author: "ClearMethod Team"
+license: "MIT"

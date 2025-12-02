@@ -1,0 +1,36 @@
+id: sbd
+name: "Stage-Based Development"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Workflows for stage-based software development with AI assistance.
+
+  Key idea: Stage-Based Development
+  - Each stage is isolated
+  - Clear inputs and outputs
+  - Controlled transitions
+  - Progressive artifact accumulation
+
+depends_on:
+  - core-concept # TASK, WORKFLOW abstractions
+  - file-task # For task storage and artifacts
+
+provides:
+  workflows:
+    - sbd.feature # 7-stage feature development
+    - sbd.bugfix # 5-stage bug fixing
+    - sbd.refactoring # 5-stage code refactoring
+
+  concepts:
+    - SBD_WORKFLOW (concrete, implements: WORKFLOW)
+
+config_template:
+  sbd:
+    default_workflow: "sbd.feature"
+    artifacts_in_task_folder: true
+    auto_git_integration: false
+
+status: mvp
+author: "ClearMethod Team"
+license: "MIT"

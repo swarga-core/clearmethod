@@ -1,0 +1,65 @@
+name: list_subscriptions
+description: List all subscriptions with optional filters
+
+params:
+  - name: event_type
+    type: string
+    required: false
+  
+  - name: extension
+    type: string
+    required: false
+  
+  - name: enabled_only
+    type: boolean
+    required: false
+    default: true
+
+instructions:
+  - group: "Read subscriptions"
+    do:
+      - let: subscriptions_file = ".cm/events/subscriptions.yml"
+      
+      - read: subscriptions_file
+        into: subscriptions
+        default: []
+      
+      - info: "EVENT: Total subscriptions: {subscriptions.length}"
+  
+  - group: "Apply filters"
+    do:
+      - let: filtered = []
+      
+      - for: sub in subscriptions
+        do:
+          - let: matches = true
+          
+          # Filter by event_type
+          - if: event_type && sub.event_type != event_type
+            then:
+              - let: matches = false
+          
+          # Filter by extension
+          - if: extension && sub.extension != extension
+            then:
+              - let: matches = false
+          
+          # Filter by enabled status
+          - if: enabled_only && !sub.enabled
+            then:
+              - let: matches = false
+          
+          - if: matches
+            then:
+              - let: filtered = filtered.append(sub)
+      
+      - info: "EVENT: {filtered.length} subscriptions match filters"
+  
+  - group: "Sort by priority"
+    do:
+      - let: sorted = sort(filtered, by: "priority", order: "asc")
+  
+  - group: "Return results"
+    do:
+      - return: sorted
+

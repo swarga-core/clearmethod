@@ -1,0 +1,79 @@
+id: file-kanban
+name: "File-based Kanban Board"
+type: implementation
+version: "0.1.0"
+
+description: |
+  File-based implementation of KANBAN concept.
+  Visualizes workflow progress through markdown board generation
+  with configurable column-to-state mapping.
+
+depends_on:
+  - core-concept    # TASK, EVENT abstractions
+  - kanban-concept  # KANBAN abstract concept
+  - file-task       # For task access
+  - basic-events    # For event handling
+
+provides:
+  concepts:
+    - FILE_KANBAN (concrete, implements: KANBAN)
+  
+  methods:
+    - KANBAN.update_board
+    - KANBAN.move_task
+    - KANBAN.get_board_state
+    - KANBAN.get_column_tasks
+    - KANBAN.add_column
+    - KANBAN.remove_column
+    - KANBAN.generate_markdown
+  
+  handlers:
+    - on_task_created
+    - on_task_state_changed
+    - on_workflow_completed
+
+config_template:
+  file_kanban:
+    enabled: true
+    
+    # Output configuration
+    output_file: ".cm/kanban/board.md"
+    auto_update: true
+    
+    # Column definitions (customizable per project)
+    columns:
+      - name: "📋 Backlog"
+        states: [creating]
+        color: "grey"
+      
+      - name: "🔄 In Progress"
+        states: [analyzing, designing, implementing]
+        color: "blue"
+      
+      - name: "🔍 Review"
+        states: [verifying]
+        color: "yellow"
+      
+      - name: "✅ Done"
+        states: [completing]
+        color: "green"
+    
+    # Display options
+    show_properties:
+      - priority
+      - assignee
+      - estimated_hours
+    
+    show_task_links: true
+    group_by_workflow: false
+    
+    # Update behavior
+    update_on_events:
+      - task.created
+      - task.state_changed
+      - task.workflow_completed
+
+status: mvp
+author: "ClearMethod Team"
+license: "MIT"
+
