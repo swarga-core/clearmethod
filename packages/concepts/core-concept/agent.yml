@@ -1,0 +1,181 @@
+# AGENT - Абстрактный концепт (интерфейс)
+# Определяет интерфейс для работы с AI-агентом (runtime ClearMethod)
+
+concept:
+  id: AGENT
+  name: "Agent"
+  type: abstract
+  version: "0.1.0"
+  description: |
+    Абстрактный концепт для работы с AI-агентом.
+
+    Агент — это runtime ClearMethod, который интерпретирует и выполняет
+    CML-инструкции. Концепт предоставляет информацию о возможностях
+    агента и состоянии контекстного окна.
+
+    Ключевая идея:
+    - ClearMethod — методология и язык (CML)
+    - Agent — исполнитель (runtime), который интерпретирует CML
+    - Разные агенты (GPT-4, Claude, Llama) — разные runtime
+
+# Свойства (статичные факты об агенте)
+properties:
+  - name: model
+    type: string
+    description: "Название модели (gpt-4o, claude-3-opus, llama-3, etc.)"
+    required: true
+
+  - name: provider
+    type: string
+    description: "Провайдер (openai, anthropic, local, etc.)"
+    required: true
+
+  - name: context_window
+    type: number
+    description: "Размер контекстного окна в токенах"
+    required: true
+
+# Методы (сигнатуры)
+methods:
+  - name: get_info
+    description: "Получить информацию об агенте"
+    signature: "get_info() → AgentInfo"
+    parameters: []
+    returns:
+      type: object
+      properties:
+        model: string
+        provider: string
+        context_window: number
+    notes: |
+      Возвращает статичную информацию о текущем агенте.
+      Используется для логирования, отладки и адаптации поведения.
+
+  - name: get_tokens_used
+    description: "Получить количество использованных токенов в текущем контексте"
+    signature: "get_tokens_used() → number"
+    parameters: []
+    returns: number
+    notes: |
+      Возвращает приблизительное количество токенов, уже загруженных
+      в контекстное окно агента.
+
+      Точность зависит от:
+      - Токенизатора конкретной модели
+      - Способа интеграции (API vs IDE)
+
+      В MVP реализация может быть приблизительной.
+
+  - name: get_tokens_available
+    description: "Получить количество доступных токенов"
+    signature: "get_tokens_available() → number"
+    parameters: []
+    returns: number
+    notes: |
+      Возвращает context_window - get_tokens_used().
+      Используется для принятия решений о загрузке контекста.
+
+  - name: estimate_tokens
+    description: "Оценить количество токенов в тексте"
+    signature: "estimate_tokens(text: string) → number"
+    parameters:
+      - name: text
+        type: string
+        required: true
+        description: "Текст для оценки"
+    returns: number
+    notes: |
+      Приблизительная оценка количества токенов в тексте.
+      Точность зависит от токенизатора модели.
+
+      Типичные приближения:
+      - ~4 символа = 1 токен (английский)
+      - ~2-3 символа = 1 токен (код)
+      - ~1-2 символа = 1 токен (не-латиница)
+
+  - name: can_fit
+    description: "Проверить, поместится ли контент в оставшееся окно"
+    signature: "can_fit(tokens: number) → boolean"
+    parameters:
+      - name: tokens
+        type: number
+        required: true
+        description: "Количество токенов для проверки"
+    returns: boolean
+    notes: |
+      Эквивалент: get_tokens_available() >= tokens
+
+      Рекомендуется оставлять запас (~10-20%) для ответа агента.
+
+# Примеры использования
+examples:
+  - description: "Проверка перед загрузкой контекста"
+    code: |
+      - let: file_tokens = AGENT.estimate_tokens(file_content)
+      - if: AGENT.can_fit(file_tokens)
+        then:
+          - "Load full file content"
+        else:
+          - "Load summary only"
+
+  - description: "Информация об агенте"
+    code: |
+      - let: info = AGENT.get_info()
+      - info: "Running on {info.model} ({info.provider})"
+      - info: "Context window: {info.context_window} tokens"
+
+  - description: "Мониторинг использования токенов"
+    code: |
+      - let: used = AGENT.get_tokens_used()
+      - let: available = AGENT.get_tokens_available()
+      - let: percent = (used / (used + available)) * 100
+      - info: "Context usage: {percent}% ({used}/{used + available})"
+
+  - description: "Адаптивная загрузка"
+    code: |
+      - let: available = AGENT.get_tokens_available()
+      - if: available > 50000
+        then:
+          - "Load full documentation"
+        else:
+          - if: available > 20000
+            then:
+              - "Load essential docs only"
+            else:
+              - "Load minimal context"
+
+# Реализации
+implementations:
+  - id: cursor-agent
+    name: "CURSOR_AGENT"
+    description: "Реализация для Cursor IDE"
+    status: planned
+
+  - id: api-agent
+    name: "API_AGENT"
+    description: "Реализация для прямых API вызовов"
+    status: planned
+
+# Примечания для разработчиков расширений
+notes: |
+  AGENT — это runtime ClearMethod. Каждая среда исполнения
+  (Cursor, ChatGPT web, API интеграция) должна предоставить
+  реализацию этого концепта.
+
+  При реализации:
+
+  1. get_tokens_used() может быть приблизительным
+     - В IDE: сумма токенов загруженных файлов
+     - В API: точное значение из API response
+
+  2. estimate_tokens() должен учитывать токенизатор модели
+     - tiktoken для OpenAI
+     - Approximation для других
+
+  3. context_window берется из конфигурации или определяется по модели
+     - gpt-4o: 128K
+     - claude-3-opus: 200K
+     - etc.
+
+  4. Реализация может кэшировать значения для производительности,
+     но должна обновлять после значительных изменений контекста.

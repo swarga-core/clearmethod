@@ -29,7 +29,7 @@ core/
 
 packages/
   concepts/
-    core-concept/         # TASK, WORKFLOW, CONTEXT, EVENT
+    core-concept/         # TASK, WORKFLOW, AGENT, CONTEXT, EVENT
     vcs-concept/          # VCS
     qa-gate-concept/      # QA_GATE
     kanban-concept/       # KANBAN
@@ -50,18 +50,20 @@ packages/
 
 **packages/concepts/core-concept/**
 
-Contains the four fundamental abstractions:
+Contains the five fundamental abstractions:
 
 1. **TASK** - Unit of work management
 2. **WORKFLOW** - State machine for task progression  
-3. **CONTEXT** - AI agent context management
-4. **EVENT** - Inter-component communication
+3. **AGENT** - AI agent runtime (model, tokens, capabilities)
+4. **CONTEXT** - AI agent context management
+5. **EVENT** - Inter-component communication
 
 **Status**: `type: concept`, `status: stable`
 
 **Why separate package?**
 
-These four concepts are the ONLY ones with special meaning:
+These five concepts are the ONLY ones with special meaning:
+- AGENT defines the runtime (who executes)
 - TASK and WORKFLOW define the core workflow engine
 - CONTEXT defines how agents load information
 - EVENT enables loose coupling
@@ -79,7 +81,7 @@ Everything else is optional extensions.
 ```yaml
 # All concepts are packages
 packages/concepts/
-  core-concept/      # TASK, WORKFLOW, CONTEXT, EVENT
+  core-concept/      # TASK, WORKFLOW, AGENT, CONTEXT, EVENT
   vcs-concept/       # VCS
   qa-gate-concept/   # QA_GATE  
   kanban-concept/    # KANBAN
@@ -91,7 +93,7 @@ packages/concepts/
 ```yaml
 # Implementation package
 depends_on:
-  - core-concept     # Get TASK, WORKFLOW, CONTEXT, EVENT
+  - core-concept     # Get TASK, WORKFLOW, AGENT, CONTEXT, EVENT
   - vcs-concept      # Get VCS
 ```
 

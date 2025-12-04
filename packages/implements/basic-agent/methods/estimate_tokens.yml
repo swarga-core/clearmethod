@@ -1,0 +1,48 @@
+# BASIC_AGENT.estimate_tokens
+# Estimates token count for given text
+
+method:
+  name: estimate_tokens
+  concept: BASIC_AGENT
+  version: "0.1.0"
+
+description: |
+  Estimate the number of tokens in a given text.
+
+parameters:
+  - name: text
+    type: string
+    required: true
+
+returns:
+  type: number
+
+execute:
+  # Strategy 1: Use tokenizer if available
+  - if: "tokenizer available (tiktoken, etc.)"
+    then:
+      - let: count = "tokenize and count"
+      - return: "{count}"
+
+  # Strategy 2: Character-based approximation
+  - let: char_count = length(text)
+
+  # Determine ratio based on content type
+  - if: "text is mostly code (brackets, operators, symbols)"
+    then:
+      - let: ratio = 3
+    else:
+      - if: "text contains non-Latin characters (Cyrillic, CJK)"
+        then:
+          - let: ratio = 2
+        else:
+          - let: ratio = 4
+
+  - let: estimated = char_count / ratio
+  - return: "{estimated}"
+
+notes: |
+  Ratios:
+  - English: 4 chars/token
+  - Code: 3 chars/token
+  - Cyrillic/CJK: 2 chars/token

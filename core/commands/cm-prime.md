@@ -114,7 +114,7 @@ Ready to work! 🚀
 ## After execution
 
 You now have full knowledge of:
-- ClearMethod concepts (TASK, WORKFLOW, CONTEXT)
+- ClearMethod concepts (TASK, WORKFLOW, AGENT, CONTEXT, EVENT)
 - CML language (how to interpret .yml instructions)
 - All available commands
 - Active extensions and their methods

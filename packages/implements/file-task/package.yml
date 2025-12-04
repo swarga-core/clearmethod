@@ -15,7 +15,7 @@ description: |
   Philosophy: Minimalism. Easy to understand, easy to debug.
 
 depends_on:
-  - core-concept # TASK, WORKFLOW, CONTEXT, EVENT abstractions
+  - core-concept # TASK, WORKFLOW, AGENT, CONTEXT, EVENT abstractions
 
 provides:
   concepts:

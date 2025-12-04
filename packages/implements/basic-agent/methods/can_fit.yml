@@ -1,0 +1,32 @@
+# BASIC_AGENT.can_fit
+# Checks if content fits in available context
+
+method:
+  name: can_fit
+  concept: BASIC_AGENT
+  version: "0.1.0"
+
+description: |
+  Check if a given number of tokens will fit in the remaining context window.
+
+parameters:
+  - name: tokens
+    type: number
+    required: true
+
+returns:
+  type: boolean
+
+execute:
+  - let: available = AGENT.get_tokens_available()
+  - let: fits = available >= tokens
+  - return: "{fits}"
+
+notes: |
+  Tip: Add 20% buffer for safety.
+
+  Example:
+  - let: safe_tokens = tokens * 1.2
+  - if: AGENT.can_fit(safe_tokens)
+    then:
+      - "Safe to load"

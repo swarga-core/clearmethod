@@ -1,0 +1,30 @@
+# BASIC_AGENT.get_tokens_available
+# Returns remaining token capacity
+
+method:
+  name: get_tokens_available
+  concept: BASIC_AGENT
+  version: "0.1.0"
+
+description: |
+  Calculate the number of tokens available for additional content.
+
+parameters: []
+
+returns:
+  type: number
+
+execute:
+  - let: info = AGENT.get_info()
+  - let: used = AGENT.get_tokens_used()
+  - let: available = info.context_window - used
+
+  - if: available < 0
+    then:
+      - warn: "Token count exceeds context window"
+      - return: 0
+
+  - return: "{available}"
+
+notes: |
+  Recommendation: Reserve 10-20% for AI response generation.

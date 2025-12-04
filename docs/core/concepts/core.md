@@ -4,31 +4,53 @@
 
 ---
 
-## 1. AGENT
+## 3. AGENT
 
-**Назначение**: Представляет ИИ-агента и его контекстное окно.
+**Тип**: Абстрактный концепт (интерфейс)
 
-**Свойства**:
-- `model: string` - название модели (gpt-4, claude-sonnet-4, etc)
-- `total_tokens: number` - размер контекстного окна (128K, 200K, etc)
-- `used_tokens: number` - использовано токенов в текущей сессии
+**Назначение**: Представляет ИИ-агента — runtime ClearMethod. Предоставляет информацию о модели и управление контекстным окном.
+
+**Свойства** (статичные):
+- `model: string` - название модели (gpt-4o, claude-3-opus, llama-3, etc.)
+- `provider: string` - провайдер (openai, anthropic, local)
+- `context_window: number` - размер контекстного окна в токенах
+
+**Методы**:
+- `get_info() → AgentInfo` - получить информацию об агенте
+- `get_tokens_used() → number` - получить количество использованных токенов
+- `get_tokens_available() → number` - получить доступное количество токенов
+- `estimate_tokens(text) → number` - оценить количество токенов в тексте
+- `can_fit(tokens) → boolean` - проверить, поместится ли контент
 
 **Зачем нужен**: 
-- Самоосознание агента о своих ограничениях
+- AI-агент как явная сущность (runtime), а не "чёрный ящик"
+- Самоосознание агента о своих возможностях и ограничениях
 - Управление контекстом (когда делать reset)
 - Адаптация поведения под возможности модели
 
 **Пример использования**:
 ```yaml
-# Агент проверяет свой контекст перед загрузкой
-- if: AGENT.used_tokens > 0.8 * AGENT.total_tokens
+# Проверка перед загрузкой большого файла
+- let: file_tokens = AGENT.estimate_tokens(file_content)
+- if: AGENT.can_fit(file_tokens)
+  then:
+    - "Load full file content"
+  else:
+    - warn: "Not enough space, loading summary only"
+
+# Мониторинг использования контекста
+- let: available = AGENT.get_tokens_available()
+- if: available < 10000
   then: 
-    - warn: "Контекст близок к переполнению, рекомендуется Context Reset"
+    - warn: "Context nearly full, consider Context Reset"
 ```
+
+**Реализации**:
+- TBD (currently implicit in IDE/framework)
 
 ---
 
-## 2. TASK
+## 1. TASK
 
 **Тип**: Абстрактный концепт (интерфейс)
 
@@ -97,7 +119,7 @@ execute:
 
 ---
 
-## 3. WORKFLOW
+## 2. WORKFLOW
 
 **Назначение**: Представляет рабочий процесс - граф состояний для задач.
 

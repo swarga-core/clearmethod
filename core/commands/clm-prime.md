@@ -60,7 +60,7 @@ Ready to work."
 ## After priming
 
 You now know:
-- ClearMethod concepts (TASK, WORKFLOW, CONTEXT)
+- ClearMethod concepts (TASK, WORKFLOW, AGENT, CONTEXT, EVENT)
 - All available commands
 - Active extensions and their methods
 - Project context

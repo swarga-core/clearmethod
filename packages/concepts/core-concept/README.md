@@ -2,10 +2,11 @@
 
 **The foundation of ClearMethod framework.**
 
-This package provides the four fundamental abstract concepts that define the core contracts of ClearMethod:
+This package provides the fundamental abstract concepts that define the core contracts of ClearMethod:
 
 - **TASK** - Unit of work management
 - **WORKFLOW** - State machine for task progression
+- **AGENT** - AI agent runtime (model, tokens, capabilities)
 - **CONTEXT** - AI agent context management
 - **EVENT** - Inter-component communication
 
@@ -27,6 +28,27 @@ This package provides the four fundamental abstract concepts that define the cor
 ---
 
 ## Concepts
+
+### AGENT
+
+Interface for AI agent runtime information.
+
+**Key methods:**
+- `get_info()` - Get agent information (model, provider, context_window)
+- `get_tokens_used()` - Get tokens currently used in context
+- `get_tokens_available()` - Get remaining token capacity
+- `estimate_tokens(text)` - Estimate tokens in text
+- `can_fit(tokens)` - Check if tokens fit in available space
+
+**Properties:**
+- `model` - Model name (gpt-4o, claude-3-opus, etc.)
+- `provider` - Provider (openai, anthropic, local)
+- `context_window` - Total context window size in tokens
+
+**Implementations:**
+- TBD (currently implicit in IDE/framework)
+
+---
 
 ### TASK
 
@@ -116,6 +138,7 @@ Interface for inter-component communication.
 ```yaml
 # .cm/project.yml
 concept_implementations:
+  AGENT: cursor-agent.CURSOR_AGENT  # or implicit
   TASK: file-task.FILE_TASK
   WORKFLOW: sbd.SBD_WORKFLOW
   EVENT: basic-events.BASIC_EVENT
@@ -127,7 +150,7 @@ concept_implementations:
 ```yaml
 # packages/implements/my-package/package.yml
 depends_on:
-  - core-concept  # ← Get access to TASK, WORKFLOW, CONTEXT, EVENT
+  - core-concept  # ← Get access to TASK, WORKFLOW, AGENT, CONTEXT, EVENT
 ```
 
 ### In CML code
@@ -143,6 +166,9 @@ instructions:
 ---
 
 ## Why These Four?
+
+### AGENT
+ClearMethod uses AI as runtime. AGENT makes the runtime explicit — model info, token management, capabilities.
 
 ### TASK
 Every system needs a way to track work units. TASK is the minimal interface for that.
@@ -164,11 +190,12 @@ Components need to communicate without tight coupling. EVENT enables pub-sub arc
 
 ### Current Status: MVP
 
-All four concepts have at least one implementation:
+All five core concepts have at least one implementation:
+- ⏳ AGENT → implicit (not yet packaged)
 - ✅ TASK → file-task
 - ✅ WORKFLOW → sbd
-- ✅ EVENT → basic-events
 - ⏳ CONTEXT → manual (not yet packaged)
+- ✅ EVENT → basic-events
 
 ### Future Additions (Maybe Never)
 
@@ -200,6 +227,7 @@ When implementing these concepts:
 packages/concepts/core-concept/
 ├── package.yml         # Package metadata
 ├── README.md           # This file
+├── agent.yml           # AGENT concept
 ├── task.yml            # TASK concept
 ├── workflow.yml        # WORKFLOW concept
 ├── context.yml         # CONTEXT concept

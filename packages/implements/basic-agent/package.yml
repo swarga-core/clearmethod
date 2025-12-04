@@ -1,0 +1,34 @@
+id: basic-agent
+name: "Basic Agent"
+type: implementation
+version: "0.1.0"
+
+description: |
+  Default implementation of AGENT concept.
+
+  Uses available tools or approximate estimation for token counting.
+  Works in any environment (IDE, API, local).
+
+implements: AGENT
+
+depends_on:
+  - core-concept
+
+provides:
+  concept: BASIC_AGENT
+  methods:
+    - get_info
+    - get_tokens_used
+    - get_tokens_available
+    - estimate_tokens
+    - can_fit
+
+status: mvp
+author: "ClearMethod Team"
+license: "MIT"
+
+notes: |
+  This is a "best effort" implementation:
+  - Token counting is approximate (4 chars ≈ 1 token for English)
+  - Agent info may be inferred from context
+  - Works without special tools or APIs

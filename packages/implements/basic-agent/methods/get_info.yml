@@ -1,0 +1,64 @@
+# BASIC_AGENT.get_info
+# Returns information about the current AI agent
+
+method:
+  name: get_info
+  concept: BASIC_AGENT
+  version: "0.1.0"
+
+description: |
+  Get information about the current AI agent.
+  Returns model name, provider, and context window size.
+
+parameters: []
+
+returns:
+  type: object
+  properties:
+    model: string
+    provider: string
+    context_window: number
+
+execute:
+  # Step 1: Try self-knowledge (AI knows its own identity)
+  - if: "you know your model identity"
+    then:
+      - let: model = "your model name (e.g., claude-sonnet-4, gpt-4o)"
+      - let: provider = "your provider (e.g., anthropic, openai)"
+      - let: context_window = "your context window size"
+    else:
+      # Step 2: Check project config
+      - if: exists(.cm/project.yml)
+        then:
+          - read: .cm/project.yml
+            as: yaml
+            into: config
+          - if: config.agent is not empty
+            then:
+              - let: model = config.agent.model
+              - let: provider = config.agent.provider
+              - let: context_window = config.agent.context_window
+            else:
+              # Step 3: Use defaults
+              - let: model = "unknown"
+              - let: provider = "unknown"
+              - let: context_window = 128000
+              - warn: "Agent identity unknown, using defaults"
+        else:
+          - let: model = "unknown"
+          - let: provider = "unknown"
+          - let: context_window = 128000
+
+  - return:
+      model: "{model}"
+      provider: "{provider}"
+      context_window: "{context_window}"
+
+# Reference: known models and context windows
+notes: |
+  Common models:
+  - gpt-4o: 128K (openai)
+  - gpt-4-turbo: 128K (openai)
+  - claude-3-opus: 200K (anthropic)
+  - claude-sonnet-4: 200K (anthropic)
+  - llama-3-70b: 8K (local)

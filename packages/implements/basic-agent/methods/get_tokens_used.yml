@@ -1,0 +1,48 @@
+# BASIC_AGENT.get_tokens_used
+# Estimates tokens currently used in context
+
+method:
+  name: get_tokens_used
+  concept: BASIC_AGENT
+  version: "0.1.0"
+
+description: |
+  Estimate the number of tokens currently used in the context window.
+
+parameters: []
+
+returns:
+  type: number
+
+execute:
+  # Strategy 1: Use platform tools if available
+  - if: "platform token counter is available"
+    then:
+      - let: count = "get count from platform/IDE"
+      - return: "{count}"
+
+  # Strategy 2: Approximate from conversation
+  - let: conversation_chars = "count characters in current conversation history"
+  - let: loaded_context_chars = "count characters from loaded primers and files"
+  - let: system_prompt_overhead = 1000
+  - let: chars_per_token = 4
+
+  - let: total_chars = conversation_chars + loaded_context_chars
+  - let: estimated_tokens = (total_chars / chars_per_token) + system_prompt_overhead
+
+  # Strategy 3: Conservative fallback
+  - if: "cannot estimate at all"
+    then:
+      - let: info = AGENT.get_info()
+      - let: estimated_tokens = info.context_window * 0.5
+      - warn: "Cannot estimate tokens, using conservative 50%"
+
+  - return: "{estimated_tokens}"
+
+notes: |
+  Approximation ratios:
+  - English text: ~4 chars/token
+  - Code: ~3 chars/token
+  - Non-Latin: ~2 chars/token
+
+  Err on side of overestimation.

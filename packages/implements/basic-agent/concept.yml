@@ -1,0 +1,65 @@
+# BASIC_AGENT - Default implementation of AGENT
+# Works in any environment using available tools or approximation
+
+concept:
+  id: BASIC_AGENT
+  name: "Basic Agent"
+  type: concrete
+  implements: AGENT
+  version: "0.1.0"
+  description: |
+    Default implementation of AGENT concept.
+    
+    Strategy:
+    1. Try to use available tools to get accurate information
+    2. Fall back to approximate estimation if tools unavailable
+    3. Infer model info from context or ask user
+    
+    This implementation prioritizes "working everywhere" over precision.
+
+# Configuration (can be overridden in project.yml)
+config:
+  default_model: "unknown"
+  default_provider: "unknown"
+  default_context_window: 128000
+  chars_per_token: 4  # Approximate ratio for estimation
+
+# Method implementations
+methods:
+  get_info:
+    file: methods/get_info.yml
+    description: "Get agent information (model, provider, context_window)"
+
+  get_tokens_used:
+    file: methods/get_tokens_used.yml
+    description: "Estimate tokens currently used in context"
+
+  get_tokens_available:
+    file: methods/get_tokens_available.yml
+    description: "Calculate remaining token capacity"
+
+  estimate_tokens:
+    file: methods/estimate_tokens.yml
+    description: "Estimate token count for given text"
+
+  can_fit:
+    file: methods/can_fit.yml
+    description: "Check if content fits in available space"
+
+# Agent notes
+agent_notes: |
+  When executing these methods:
+  
+  1. **get_info**: 
+     - If you know your model (e.g., you're Claude or GPT-4), return accurate info
+     - Otherwise, check project config or ask user
+  
+  2. **Token counting**:
+     - Use built-in tools if available (e.g., tiktoken for OpenAI)
+     - Otherwise, use approximation: ~4 characters = 1 token (English)
+     - For non-Latin scripts, use ~2 characters = 1 token
+  
+  3. **Context tracking**:
+     - Track what you've loaded in current session
+     - This is approximate — err on the side of caution
+
